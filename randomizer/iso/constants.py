@@ -445,6 +445,12 @@ class Type(Enum):
     SHADOW = 0xFF
 
 
+VALID_POKEMON_TYPES = [a for a in list(Type) if a not in [
+    Type.CURSE,
+    Type.SHADOW
+]]
+
+
 class Ability(IntEnum):
     NONE = 0x00
     STENCH = 0x01

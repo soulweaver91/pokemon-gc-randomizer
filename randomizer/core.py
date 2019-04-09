@@ -58,6 +58,13 @@ class Randomizer:
 
         self.handler.open_archives()
         self.handler.load_pokemon_data()
-        self.handler.randomize_pokemon_stats()
+
+        if config.rng_pkstats:
+            self.handler.randomize_pokemon_stats()
+        if config.rng_pktypes:
+            self.handler.randomize_pokemon_types()
+        if config.rng_pkabi:
+            self.handler.randomize_pokemon_abilities()
+
         self.handler.write_pokemon_data()
         self.handler.write_archives()

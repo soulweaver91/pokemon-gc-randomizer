@@ -7,13 +7,24 @@ class RandomizerConfig:
         self._config = {
             "working_dir": None,
             "dump_files": False,
-            "randomize_types": True,
-            "randomize_abilities": True,
+            "rng_pkstats": True,
+            "rng_pkstats_retain_bst": True,
+            "rng_pkstats_family": True,
+            "rng_pkstats_wg_1hp": True,
+            "rng_pktypes": True,
+            "rng_pktypes_family": True,
+            "rng_pktypes_family_change_ratio": 33,
+            "rng_pktypes_monotype_ratio": 33,
+            "rng_pkabi": True,
+            "rng_pkabi_family": True,
+            "rng_pkabi_family_change_ratio": 33,
+            "rng_pkabi_monoabi_ratio": 33,
+            "rng_pkabi_ban": ['WONDER_GUARD', 'FORECAST'],
         }
 
     def configure(self, **kwargs):
         for argn, argv in kwargs.items():
-            if argn in self._config:
+            if argn in self._config and argv is not None:
                 self._config[argn] = argv
         pass
 

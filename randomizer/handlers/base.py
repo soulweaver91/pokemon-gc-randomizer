@@ -4,10 +4,17 @@ import logging
 import random
 from struct import unpack, pack
 
-from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies
+from randomizer import config
+from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies, VALID_POKEMON_TYPES
 from randomizer.iso.fsys import FsysArchive
 from randomizer.iso.structs import StatSet, EvoEntry, LevelUpMoveEntry
 from randomizer.util import chunked
+
+
+RANDOM_BST_MIN = 120
+RANDOM_BST_MAX = 800
+BASE_STAT_MINIMUM = 15
+BASE_STAT_MAXIMUM = 255
 
 
 class AbstractHandlerMethodError(NotImplementedError):
@@ -17,8 +24,23 @@ class AbstractHandlerMethodError(NotImplementedError):
 
 class BasePokemon:
     def __init__(self):
+        self.exp_class = None
+        self.catch_rate = None
+        self.gender_ratio = None
+        self.exp_gain = None
+        self.base_happiness = None
+        self.natdex_no = None
         self.base_stats = None
         self.ev_gain = None
+        self.type1 = None
+        self.type2 = None
+        self.ability1 = None
+        self.ability2 = None
+        self.item1 = None
+        self.item2 = None
+        self.height = None
+        self.weight = None
+        self.species = None
         self.tm_compatibility = [False for _ in range(0, 50)]
         self.hm_compatibility = [False for _ in range(0, 8)]
         self.tutor_compatibility = []
@@ -98,8 +120,96 @@ class BasePokemon:
 
         return level_up_moves
 
+    def randomize_base_stats(self, keep_bst, stat_distribution=None):
+        if self.base_stats.total == 0:
+            return
+
+        new_bst = self.base_stats.total if keep_bst else round(
+            min(RANDOM_BST_MAX, max(RANDOM_BST_MIN, random.gauss(
+                (RANDOM_BST_MAX + RANDOM_BST_MIN) / 2,
+                (RANDOM_BST_MAX - RANDOM_BST_MIN) / 6)))
+        )
+
+        if stat_distribution is None:
+            stat_distribution = [max(0, random.gauss(1, 0.25)) for _ in range(0, 6)]
+
+        multiplier = sum(stat_distribution) / 6 * (new_bst / 6)
+
+        new_stats = [min(BASE_STAT_MAXIMUM, max(BASE_STAT_MINIMUM, round(stat * multiplier)))
+                     for stat in stat_distribution]
+
+        if config.rng_pkstats_wg_1hp and self.ability1 == Ability.WONDER_GUARD or self.ability2 == Ability.WONDER_GUARD:
+            new_stats[0] = 1
+
+        # Fudge random stats until we're at target BST
+        while sum(new_stats) > new_bst:
+            stat_idx = random.randint(0, 5)
+            if new_stats[stat_idx] > BASE_STAT_MINIMUM and new_stats[stat_idx] != 1:
+                new_stats[stat_idx] -= 1
+
+        while sum(new_stats) < new_bst:
+            stat_idx = random.randint(0, 5)
+            if new_stats[stat_idx] < BASE_STAT_MAXIMUM and new_stats[stat_idx] != 1:
+                new_stats[stat_idx] += 1
+
+        self.base_stats = StatSet(*new_stats)
+        return stat_distribution
+
+    def randomize_types(self, previous_stage_types=None):
+        if previous_stage_types is not None:
+            self.type1, self.type2 = previous_stage_types
+
+            if random.random() < config.rng_pktypes_family_change_ratio / 100:
+                # Normal type is handled differently:
+                # - solo Normal type can evolve into solo or dual other type
+                # - Normal/? type needs to have its first type replaced rather than the second one
+                # - Non-Normal type cannot be randomized back to Normal
+                if self.type1 == Type.NORMAL and self.type2 == Type.NORMAL:
+                    return self.randomize_types()
+                elif self.type1 == Type.NORMAL:
+                    self.type1 = random.choice([t for t in VALID_POKEMON_TYPES if t != Type.NORMAL])
+                else:
+                    self.type2 = random.choice([t for t in VALID_POKEMON_TYPES if t != self.type2 and t != Type.NORMAL])
+
+        else:
+            self.type1 = random.choice(VALID_POKEMON_TYPES)
+
+            if random.random() < config.rng_pktypes_monotype_ratio / 100:
+                self.type2 = self.type1
+            else:
+                # Normal type as the second type sometimes appears as hidden (for example in XD Strategy Memo)
+                # even though canonically solo types are encoded as matching type 1 and type 2. To fix this,
+                # Normal/? types are never allowed unless the Pokémon is monotype
+                self.type2 = random.choice([t for t in VALID_POKEMON_TYPES if t != Type.NORMAL])
+
+        return self.type1, self.type2
+
+    def randomize_abilities(self, allowed_abilities, previous_stage_abilities=None):
+        if previous_stage_abilities is not None:
+            self.ability1, self.ability2 = previous_stage_abilities
+
+            if random.random() < config.rng_pkabi_family_change_ratio / 100:
+                return self.randomize_abilities(allowed_abilities)
+
+        else:
+            self.ability1 = random.choice(allowed_abilities)
+
+            if random.random() < config.rng_pkabi_monoabi_ratio / 100:
+                self.ability2 = self.ability1
+            else:
+                self.ability2 = random.choice(allowed_abilities)
+
+        # Special case: if Wonder Guard is allowed and a Pokémon with it has 1 HP, then that Pokémon should never
+        # get an alternate ability as it would just be unusable.
+        if config.rng_pkstats_wg_1hp and (
+                self.ability1 == Ability.WONDER_GUARD or self.ability2 == Ability.WONDER_GUARD):
+            self.ability1 = Ability.WONDER_GUARD
+            self.ability2 = Ability.WONDER_GUARD
+
+        return self.ability1, self.ability2
+
     def encode(self):
-        return AbstractHandlerMethodError()
+        raise AbstractHandlerMethodError()
 
 
 class BaseHandler:
@@ -115,6 +225,13 @@ class BaseHandler:
     def __init__(self, iso, region):
         self.iso = iso
         self.region = region
+
+        # Cacophony is banned because it doesn't have a description and as such crashes the Pokémon status screen and
+        # Strategy Memo. It might not work anyways, and its effect is a duplicate one, so it isn't needed in any case.
+        self.allowed_abilities = [a for a in list(Ability)
+                                  if a not in [Ability.NONE, Ability.CACOPHONY]
+                                  and a.name not in map(lambda n: n.upper(), config.rng_pkabi_ban)]
+        self.normal_pokemon = []
 
     def open_archives(self):
         raise AbstractHandlerMethodError()
@@ -145,7 +262,7 @@ class BaseHandler:
 
                 logging.debug(
                     '  #%d %s, %s%s%s, %d/%d/%d/%d/%d/%d (BST %d), %s%s%s',
-                    pkmn.unknown_natdex_no_1,
+                    pkmn.natdex_no,
                     PokemonSpecies(i).name,
                     pkmn.type1.name,
                     '/' if pkmn.type1 != pkmn.type2 else '',
@@ -179,7 +296,9 @@ class BaseHandler:
                         evo_specifier = 'with item #%d ' % evo.item
 
                     logging.debug('  Evolves to %s %s(%s)',
-                                  PokemonSpecies(evo.evolves_to).name, evo_specifier, evo.type)
+                                  PokemonSpecies(evo.evolves_to).name, evo_specifier, evo.type.name)
+
+            self.normal_pokemon = list(filter(lambda pkmn: pkmn.natdex_no > 0, self.pokemon_data.values()))
         except KeyError as e:
             logging.error('Couldn\'t read Pokémon data since the required data file was not loaded.')
             raise e
@@ -198,53 +317,53 @@ class BaseHandler:
         return set(range(Move.POUND.value, Move.PSYCHO_BOOST.value)).remove([Move.STRUGGLE.value])
 
     def get_available_shadow_moves(self):
-        return AbstractHandlerMethodError()
+        raise AbstractHandlerMethodError()
+
+    def randomize_pokemon_get_root_level_list(self, condition):
+        return self.get_first_stages() if condition else self.normal_pokemon
+
+    def randomize_pokemon_aspect_recur(self, aspect, result_arg_name, pkmn_list, recurse,
+                                       previous_result=None, **kwargs):
+        for pkmn in pkmn_list:
+            randomization_result = getattr(pkmn, 'randomize_' + aspect)(
+                **{result_arg_name: previous_result}, **kwargs)
+            if recurse:
+                evolution_targets = [self.pokemon_data[evo.evolves_to.value] for evo in pkmn.evolution
+                                     if evo.evolves_to is not PokemonSpecies.NONE]
+
+                self.randomize_pokemon_aspect_recur(aspect, result_arg_name, evolution_targets,
+                                                    previous_result=randomization_result, recurse=True, **kwargs)
 
     def randomize_pokemon_stats(self):
-        # TODO temp proof of concept
-        types = self.get_normal_types()
-        abilities = self.get_safe_abilities()
+        self.randomize_pokemon_aspect_recur('base_stats', 'stat_distribution',
+                                            self.randomize_pokemon_get_root_level_list(config.rng_pkstats_family),
+                                            recurse=config.rng_pkstats_family, keep_bst=config.rng_pkstats_retain_bst)
 
-        for i, pkmn in self.pokemon_data.items():
-            if pkmn.unknown_natdex_no_1 == 0:
-                continue
+    def randomize_pokemon_types(self):
+        self.randomize_pokemon_aspect_recur('types', 'previous_stage_types',
+                                            self.randomize_pokemon_get_root_level_list(config.rng_pktypes_family),
+                                            recurse=config.rng_pktypes_family)
 
-            pkmn.type1 = random.choice(types)
-            pkmn.type2 = random.choice(types)
-            if pkmn.type1 != Type.NORMAL and pkmn.type2 == Type.NORMAL:
-                # Normal type as the second type sometimes appears as hidden, so normal/? type should always
-                # have the normal type as the first one
-                pkmn.type2, pkmn.type1 = pkmn.type1, pkmn.type2
+    def randomize_pokemon_abilities(self):
+        self.randomize_pokemon_aspect_recur('abilities', 'previous_stage_abilities',
+                                            self.randomize_pokemon_get_root_level_list(config.rng_pkabi_family),
+                                            recurse=config.rng_pkabi_family, allowed_abilities=self.allowed_abilities)
 
-            if pkmn.ability1 in abilities:
-                pkmn.ability1 = random.choice(abilities)
-                pkmn.ability2 = random.choice(abilities)
+    def randomize_pokemon_movesets(self):
+        pass
 
-    def make_pokemon_data(self, io_in, idx):
-        return AbstractHandlerMethodError()
-
-    @staticmethod
-    def get_safe_abilities():
-        return [a for a in list(Ability) if a not in [
-            Ability.NONE,
-            Ability.FORECAST,
-            Ability.WONDER_GUARD
-        ]]
-
-    @staticmethod
-    def get_normal_types():
-        return [a for a in list(Type) if a not in [
-            Type.CURSE,
-            Type.SHADOW
-        ]]
+    def make_pokemon_data(self, io_in, idx) -> BasePokemon:
+        raise AbstractHandlerMethodError()
 
     def get_first_stages(self):
-        first_stage_candidates = [pkmn.species for i, pkmn in self.pokemon_data.items() if pkmn.unknown_natdex_no_1 != 0]
+        pokemon_data = self.normal_pokemon
 
-        for i, pkmn in self.pokemon_data.items():
+        first_stage_candidates = [pkmn.species for pkmn in pokemon_data]
+
+        for pkmn in pokemon_data:
             for evo in pkmn.evolution:
                 if evo.evolves_to in first_stage_candidates:
                     first_stage_candidates.remove(evo.evolves_to)
 
-        return first_stage_candidates
+        return [self.pokemon_data[p.value] for p in first_stage_candidates]
 
