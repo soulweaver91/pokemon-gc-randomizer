@@ -5,7 +5,7 @@ import random
 from struct import unpack, pack
 
 from randomizer import config
-from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies, VALID_POKEMON_TYPES
+from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies, VALID_POKEMON_TYPES, Item
 from randomizer.iso.fsys import FsysArchive
 from randomizer.iso.structs import StatSet, EvoEntry, LevelUpMoveEntry
 from randomizer.util import chunked
@@ -208,6 +208,11 @@ class BasePokemon:
 
         return self.ability1, self.ability2
 
+    def patch_evolution(self, index, evo_type, level_or_item):
+        self.evolution[index].type = evo_type
+        self.evolution[index].level = level_or_item.value if type(level_or_item) == Item else level_or_item
+        self.evolution[index].item = Item(level_or_item)
+
     def encode(self):
         raise AbstractHandlerMethodError()
 
@@ -293,7 +298,7 @@ class BaseHandler:
                     if evo.type.param_is_level:
                         evo_specifier = 'at level %d ' % evo.level
                     if evo.type.param_is_item:
-                        evo_specifier = 'with item #%d ' % evo.item
+                        evo_specifier = 'with item %s ' % evo.item.name
 
                     logging.debug('  Evolves to %s %s(%s)',
                                   PokemonSpecies(evo.evolves_to).name, evo_specifier, evo.type.name)
@@ -351,6 +356,30 @@ class BaseHandler:
 
     def randomize_pokemon_movesets(self):
         pass
+
+    def patch_impossible_evolutions(self):
+        # Plain trade evolution after evolving once
+        self.pokemon_data[PokemonSpecies.KADABRA].patch_evolution(0, EvolutionType.LEVEL_UP, 32)
+        self.pokemon_data[PokemonSpecies.MACHOKE].patch_evolution(0, EvolutionType.LEVEL_UP, 37)
+        self.pokemon_data[PokemonSpecies.GRAVELER].patch_evolution(0, EvolutionType.LEVEL_UP, 37)
+        self.pokemon_data[PokemonSpecies.HAUNTER].patch_evolution(0, EvolutionType.LEVEL_UP, 37)
+
+        # Trade evolution with item, no branching
+        self.pokemon_data[PokemonSpecies.ONIX].patch_evolution(0, EvolutionType.LEVEL_UP, 30)
+        self.pokemon_data[PokemonSpecies.SCYTHER].patch_evolution(0, EvolutionType.LEVEL_UP, 30)
+        self.pokemon_data[PokemonSpecies.PORYGON].patch_evolution(0, EvolutionType.LEVEL_UP, 30)
+        self.pokemon_data[PokemonSpecies.SEADRA].patch_evolution(0, EvolutionType.LEVEL_UP, 42)
+
+        # Trade evolution with item, with branching
+        self.pokemon_data[PokemonSpecies.POLIWHIRL].patch_evolution(1, EvolutionType.STONE_EVOLUTION, Item.SUN_STONE)
+        self.pokemon_data[PokemonSpecies.SLOWPOKE].patch_evolution(1, EvolutionType.STONE_EVOLUTION, Item.MOON_STONE)
+        self.pokemon_data[PokemonSpecies.CLAMPERL].patch_evolution(0, EvolutionType.STONE_EVOLUTION, Item.SUN_STONE)
+        self.pokemon_data[PokemonSpecies.CLAMPERL].patch_evolution(1, EvolutionType.STONE_EVOLUTION, Item.MOON_STONE)
+
+        # High beauty evolution; Orre doesn't have PokéBlocks
+        self.pokemon_data[PokemonSpecies.FEEBAS].patch_evolution(0, EvolutionType.LEVEL_UP, 30)
+
+        # TODO: Espeon and Umbreon for Colosseum
 
     def make_pokemon_data(self, io_in, idx) -> BasePokemon:
         raise AbstractHandlerMethodError()

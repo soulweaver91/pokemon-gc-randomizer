@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from .constants import Move, EvolutionType, PokemonSpecies
+from .constants import Move, EvolutionType, PokemonSpecies, Item
 
 
 class StatSet:
@@ -23,7 +23,7 @@ class EvoEntry:
         self.type = EvolutionType(type)
         self.unknown1 = unknown1
         self.level = level_or_item
-        self.item = level_or_item
+        self.item = Item(level_or_item)
         self.evolves_to = PokemonSpecies(evolves_to)
 
 

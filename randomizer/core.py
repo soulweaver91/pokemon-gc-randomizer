@@ -59,6 +59,9 @@ class Randomizer:
         self.handler.open_archives()
         self.handler.load_pokemon_data()
 
+        if config.patch_impossible_evolutions:
+            self.handler.patch_impossible_evolutions()
+
         if config.rng_pkstats:
             self.handler.randomize_pokemon_stats()
         if config.rng_pktypes:

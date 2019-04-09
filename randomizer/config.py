@@ -20,6 +20,7 @@ class RandomizerConfig:
             "rng_pkabi_family_change_ratio": 33,
             "rng_pkabi_monoabi_ratio": 33,
             "rng_pkabi_ban": ['WONDER_GUARD', 'FORECAST'],
+            "patch_impossible_evolutions": True
         }
 
     def configure(self, **kwargs):

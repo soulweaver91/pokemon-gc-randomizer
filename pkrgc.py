@@ -181,6 +181,14 @@ if __name__ == "__main__":
 
     parser_patches_group = parser.add_argument_group('Miscellaneous patches')
     # TODO. Name casing change, etc. patches.
+    add_enable_disable_argument(
+        parser_patches_group,
+        'update-evolutions',
+        default=config.patch_impossible_evolutions,
+        help_enable='Alter evolutions that would otherwise require connecting to another game to happen on a specific '
+                    'level instead.',
+        help_disable='Do not change evolution methods. Some evolutions will be unavailable.'
+    )
 
     args = parser.parse_args()
     logging.basicConfig(level=getattr(logging, args.loglevel.upper()),

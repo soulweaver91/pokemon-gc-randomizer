@@ -3,7 +3,7 @@
 from struct import unpack, pack
 
 from randomizer.handlers.base import BasePokemon
-from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies
+from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies, Item
 from . import BaseHandler
 
 
@@ -44,8 +44,8 @@ class XDPokemon(BasePokemon):
             tm_compatibility,
             hm_compatibility,
             tutor_compatibility,
-            self.item1,
-            self.item2,
+            item1,
+            item2,
             egg_moves,
             base_hp,
             base_atk,
@@ -69,6 +69,8 @@ class XDPokemon(BasePokemon):
         self.ability2 = Ability(ability2)
         self.type1 = Type(type1)
         self.type2 = Type(type2)
+        self.item1 = Item(item1)
+        self.item2 = Item(item2)
 
         self.set_base_stats(base_hp, base_atk, base_def, base_spatk, base_spdef, base_speed)
         self.set_ev_gain(evgain_hp, evgain_atk, evgain_def, evgain_spatk, evgain_spdef, evgain_speed)
@@ -114,8 +116,8 @@ class XDPokemon(BasePokemon):
             tm_compatibility,
             hm_compatibility,
             tutor_compatibility,
-            self.item1,
-            self.item2,
+            self.item1.value,
+            self.item2.value,
             self.encode_egg_moves(),
             self.base_stats.hp,
             self.base_stats.attack,
