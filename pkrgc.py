@@ -186,7 +186,14 @@ if __name__ == "__main__":
         'update-evolutions',
         default=config.patch_impossible_evolutions,
         help_enable='Alter evolutions that would otherwise require connecting to another game to happen on a specific '
-                    'level instead.',
+                    'level or with a specific evolution item instead. Note that evolutions are changed before they are '
+                    'randomized, if --rng-pkevo is enabled. Evolutions are changed as follows: '
+                    'Kadabra evolves into Alakazam at level 32. '
+                    'Machoke, Graveler and Haunter evolve into Machamp, Golem and Gengar at level 37. '
+                    'Onix, Porygon, Scyther and Feebas evolve into Steelix, Porygon2, Scizor and Milotic at level 30. '
+                    'Seadra evolves into Kingdra at level 42. '
+                    'Poliwhirl and Clamperl evolve into Politoed and Gorebyss with a Sun Stone. '
+                    'Slowpoke and Clamperl evolve into Politoed and Huntail with a Moon Stone.',
         help_disable='Do not change evolution methods. Some evolutions will be unavailable.'
     )
 
