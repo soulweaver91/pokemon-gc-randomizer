@@ -224,7 +224,6 @@ class BaseHandler:
     pokemon_data = dict()
 
     # these should be filled in in the derived handlers
-    POKEMON_DATA_OFFSET = None
     POKEMON_DATA_LIST_LENGTH = 0
 
     def __init__(self, iso, region):
@@ -259,7 +258,7 @@ class BaseHandler:
         logging.debug('Starting to read Pokémon data into memory.')
         try:
             common_rel = self.archives[b'common.fsys'].files['common_rel'].data
-            common_rel.seek(self.POKEMON_DATA_OFFSET)
+            common_rel.seek(self.get_pokemon_data_offset())
 
             for i in range(1, self.POKEMON_DATA_LIST_LENGTH + 1):
                 logging.debug('Reading index %d of %d...', i, self.POKEMON_DATA_LIST_LENGTH)
@@ -312,7 +311,7 @@ class BaseHandler:
         logging.debug('Encoding Pokémon data in preparation to be written to the ISO.')
 
         common_rel = self.archives[b'common.fsys'].files['common_rel'].data
-        common_rel.seek(self.POKEMON_DATA_OFFSET)
+        common_rel.seek(self.get_pokemon_data_offset())
 
         for i, pkmn in self.pokemon_data.items():
             logging.debug('Encoding index %d of %d...', i, self.POKEMON_DATA_LIST_LENGTH)

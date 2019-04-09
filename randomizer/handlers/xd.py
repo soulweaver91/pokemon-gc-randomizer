@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from struct import unpack, pack
 
+from randomizer.constants import IsoRegion
 from randomizer.handlers.base import BasePokemon
 from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies, Item
 from . import BaseHandler
@@ -137,7 +138,6 @@ class XDPokemon(BasePokemon):
 
 
 class XDHandler(BaseHandler):
-    POKEMON_DATA_OFFSET = 0x00029ECC
     POKEMON_DATA_LIST_LENGTH = 414
 
     def get_available_shadow_moves(self):
@@ -152,3 +152,13 @@ class XDHandler(BaseHandler):
 
     def write_archives(self):
         self.write_archive(b'common.fsys')
+
+    def get_pokemon_data_offset(self):
+        if self.region == IsoRegion.USA:
+            return 0x00029ECC
+        elif self.region == IsoRegion.EUR:
+            return 0x0002BE8C
+        elif self.region == IsoRegion.JPN:
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
