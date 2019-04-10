@@ -44,7 +44,7 @@ class FsysFile:
                 logging.warning('Couldn\'t dump the file %s, skipping dumping.', dump_path)
 
     def encode(self):
-        logging.debug('  Compressing %s.', self.fname.encode('ascii', errors='replace'))
+        logging.debug('  Compressing %s.', self.fname.decode('ascii', errors='replace'))
         self.data.seek(0)
         output = BytesIO()
         encode(self.data, outfile=output)
