@@ -274,7 +274,7 @@ class IsoFile(object):
         last_free_offset = None
         for n, f in sorted(self.files.items(), key=lambda x: x[1][0]):
             if f[2] is not None and last_free_offset is not None and last_free_offset + bytes_required < f[0]:
-                print('%d bytes free before %s (%d-%d)' % (f[0] - (last_free_offset + bytes_required), n, last_free_offset + bytes_required, f[0]))
+                # Found an area of ROM that should be free according to the TOC; relocate the file there.
                 break
 
             last_free_offset = f[0] + f[1]
