@@ -20,6 +20,10 @@ class RandomizerConfig:
             "rng_pkabi_family_change_ratio": 33,
             "rng_pkabi_monoabi_ratio": 33,
             "rng_pkabi_ban": ['WONDER_GUARD', 'FORECAST'],
+            "rng_move_power": False,
+            "rng_move_types": False,
+            "rng_move_accuracy": False,
+            "rng_move_pp": False,
             "patch_impossible_evolutions": True
         }
 

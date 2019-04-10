@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import random
+import math
 from struct import unpack, pack
 
 from randomizer import config
@@ -217,14 +218,60 @@ class BasePokemon:
         raise AbstractHandlerMethodError()
 
 
+class BaseMoveEntry:
+    def __init__(self):
+        self.priority = None
+        self.pp = None
+        self.type = None
+        self.targets = None
+        self.accuracy = None
+        self.effect_proc = None
+        self.contact = None
+        self.protectable = None
+        self.magic_coat = None
+        self.snatchable = None
+        self.mirror_movable = None
+        self.kings_rock_proc = None
+        self.sound_move = None
+        self.hm = None
+        self.recoil = None
+        self.power = None
+        self.effect_type = None
+        self.name_id = None
+        self.anim_id = None
+        self.desc_id = None
+        self.move = None
+
+    def encode(self):
+        raise AbstractHandlerMethodError()
+
+    def randomize(self, change_type, change_pp, change_power, change_acc):
+        if change_type and self.move not in [Move.CURSE, Move.STRUGGLE]:
+            self.type = random.choice(VALID_POKEMON_TYPES)
+
+        if change_power and self.power > 0:
+            self.power = random.randint(2, 18) * 5
+
+        if change_acc and self.accuracy > 0:
+            rand = random.random()
+            # Linear scale from 30% to 280% that is clamped to 30-100%, meaning about 70% chance of
+            # normal 100% accuracy and about 30% chance spread evenly among all multiples of 5 between 30% and 100%.
+            self.accuracy = min(100, 30 + round(rand * 50) * 5)
+
+        if change_pp and self.pp > 1:
+            self.pp = random.randint(1, 8) * 5
+
+
 class BaseHandler:
     iso = None
     region = None
     archives = dict()
     pokemon_data = dict()
+    move_data = dict()
 
     # these should be filled in in the derived handlers
     POKEMON_DATA_LIST_LENGTH = 0
+    MOVE_DATA_LIST_LENGTH = 0
 
     def __init__(self, iso, region):
         self.iso = iso
@@ -253,7 +300,6 @@ class BaseHandler:
         self.iso.writeFile(name, 0, data)
         logging.debug('Wrote %s (%d bytes) back into the ISO.', name.decode('ascii', errors='ignore'), len(data))
 
-    # noinspection PyUnresolvedReferences
     def load_pokemon_data(self):
         logging.debug('Starting to read Pokémon data into memory.')
         try:
@@ -307,6 +353,30 @@ class BaseHandler:
             logging.error('Couldn\'t read Pokémon data since the required data file was not loaded.')
             raise e
 
+    def load_move_data(self):
+        logging.debug('Starting to read move data into memory.')
+        try:
+            common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+            common_rel.seek(self.get_move_data_offset())
+
+            for i in range(1, self.MOVE_DATA_LIST_LENGTH + 1):
+                logging.debug('Reading index %d of %d...', i, self.MOVE_DATA_LIST_LENGTH)
+                move = self.move_data[i] = self.make_move_data(common_rel, i)
+
+                logging.debug(
+                    '  #%d %s, %s, %d BP, %d PP, %d%% accuracy',
+                    i,
+                    Move.from_idx(i).friendly_name,
+                    move.type.name,
+                    move.power,
+                    move.pp,
+                    move.accuracy
+                )
+
+        except KeyError as e:
+            logging.error('Couldn\'t read move data since the required data file was not loaded.')
+            raise e
+
     def write_pokemon_data(self):
         logging.debug('Encoding Pokémon data in preparation to be written to the ISO.')
 
@@ -316,6 +386,16 @@ class BaseHandler:
         for i, pkmn in self.pokemon_data.items():
             logging.debug('Encoding index %d of %d...', i, self.POKEMON_DATA_LIST_LENGTH)
             common_rel.write(pkmn.encode())
+
+    def write_move_data(self):
+        logging.debug('Encoding move data in preparation to be written to the ISO.')
+
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        common_rel.seek(self.get_move_data_offset())
+
+        for i, move in self.move_data.items():
+            logging.debug('Encoding index %d of %d...', i, self.MOVE_DATA_LIST_LENGTH)
+            common_rel.write(move.encode())
 
     def get_available_normal_moves(self):
         return set(range(Move.POUND.value, Move.PSYCHO_BOOST.value)).remove([Move.STRUGGLE.value])
@@ -356,6 +436,11 @@ class BaseHandler:
     def randomize_pokemon_movesets(self):
         pass
 
+    def randomize_moves(self):
+        for i, move in self.move_data.items():
+            move.randomize(config.rng_move_types, config.rng_move_pp,
+                           config.rng_move_power, config.rng_move_accuracy)
+
     def patch_impossible_evolutions(self):
         # Plain trade evolution after evolving once
         self.pokemon_data[PokemonSpecies.KADABRA].patch_evolution(0, EvolutionType.LEVEL_UP, 32)
@@ -381,6 +466,15 @@ class BaseHandler:
         # TODO: Espeon and Umbreon for Colosseum
 
     def make_pokemon_data(self, io_in, idx) -> BasePokemon:
+        raise AbstractHandlerMethodError()
+
+    def make_move_data(self, io_in, idx) -> BaseMoveEntry:
+        raise AbstractHandlerMethodError()
+
+    def get_pokemon_data_offset(self):
+        raise AbstractHandlerMethodError()
+
+    def get_move_data_offset(self):
         raise AbstractHandlerMethodError()
 
     def get_first_stages(self):

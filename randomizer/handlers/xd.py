@@ -3,7 +3,7 @@
 from struct import unpack, pack
 
 from randomizer.constants import IsoRegion
-from randomizer.handlers.base import BasePokemon
+from randomizer.handlers.base import BasePokemon, BaseMoveEntry
 from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies, Item
 from . import BaseHandler
 
@@ -137,8 +137,86 @@ class XDPokemon(BasePokemon):
             self.unknown_0x115_0x124)
 
 
+class XDMoveEntry(BaseMoveEntry):
+    SIGNATURE = '>bBBBBBBBBBBB4sBBBBB4sB3sB4sH10sH2sH4s'
+
+    def __init__(self, data, idx):
+        super().__init__()
+
+        (
+            self.priority,
+            self.pp,
+            m_type,
+            self.targets,
+            self.accuracy,
+            self.effect_proc,
+            self.contact,
+            self.protectable,
+            self.magic_coat,
+            self.snatchable,
+            self.mirror_movable,
+            self.kings_rock_proc,
+            self.unknown_0x0c_0x0f,
+            self.sound_move,
+            self.unknown_0x11,
+            self.hm,
+            self.category,
+            self.recoil,
+            self.unknown_0x15_0x18,
+            self.power,
+            self.unknown_0x1a_0x1c,
+            self.effect_type,
+            self.unknown_0x1e_0x21,
+            self.name_id,
+            self.unknown_0x24_0x2d,
+            self.desc_id,
+            self.unknown_0x30_0x31,
+            self.anim_id,
+            self.unknown_0x34_0x37,
+        ) = unpack(self.SIGNATURE, data)
+
+        self.type = Type(m_type)
+        self.move = Move.from_idx(idx)
+    pass
+
+    def encode(self):
+        return pack(
+            self.SIGNATURE,
+            self.priority,
+            self.pp,
+            self.type.value,
+            self.targets,
+            self.accuracy,
+            self.effect_proc,
+            self.contact,
+            self.protectable,
+            self.magic_coat,
+            self.snatchable,
+            self.mirror_movable,
+            self.kings_rock_proc,
+            self.unknown_0x0c_0x0f,
+            self.sound_move,
+            self.unknown_0x11,
+            self.hm,
+            self.category,
+            self.recoil,
+            self.unknown_0x15_0x18,
+            self.power,
+            self.unknown_0x1a_0x1c,
+            self.effect_type,
+            self.unknown_0x1e_0x21,
+            self.name_id,
+            self.unknown_0x24_0x2d,
+            self.desc_id,
+            self.unknown_0x30_0x31,
+            self.anim_id,
+            self.unknown_0x34_0x37
+        )
+
+
 class XDHandler(BaseHandler):
     POKEMON_DATA_LIST_LENGTH = 414
+    MOVE_DATA_LIST_LENGTH = 373
 
     def get_available_shadow_moves(self):
         return set(range(Move.SHADOW_BLITZ.value, Move.SHADOW_HALF.value))
@@ -150,6 +228,9 @@ class XDHandler(BaseHandler):
     def make_pokemon_data(self, io_in, idx):
         return XDPokemon(io_in.read(0x124), idx)
 
+    def make_move_data(self, io_in, idx):
+        return XDMoveEntry(io_in.read(0x38), idx)
+
     def write_archives(self):
         self.write_archive(b'common.fsys')
 
@@ -158,6 +239,16 @@ class XDHandler(BaseHandler):
             return 0x00029ECC
         elif self.region == IsoRegion.EUR:
             return 0x0002BE8C
+        elif self.region == IsoRegion.JPN:
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    def get_move_data_offset(self):
+        if self.region == IsoRegion.USA:
+            return 0x000A2748
+        elif self.region == IsoRegion.EUR:
+            return 0x000A75C4
         elif self.region == IsoRegion.JPN:
             raise NotImplementedError
         else:

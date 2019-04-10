@@ -174,6 +174,39 @@ if __name__ == "__main__":
              '(Default: WONDER_GUARD, FORECAST)'
     )
 
+    parser_move_randomization_group = parser.add_argument_group('Move randomization options')
+    add_enable_disable_argument(
+        parser_move_randomization_group,
+        'rng-move-power',
+        default=config.rng_move_power,
+        help_enable='Randomize the base power of each damaging move to a value between 10 and 180, divisible by 5.',
+        help_disable='Do not change the move base powers.'
+    )
+    add_enable_disable_argument(
+        parser_move_randomization_group,
+        'rng-move-types',
+        default=config.rng_move_types,
+        help_enable='Randomize the type of every move except Curse and Struggle. Note that this cannot make normal '
+                    'moves shadow moves and vice versa. The resulting types will be used when determining Pokémon '
+                    'learn-up movesets if --rng-pkmoves is enabled.',
+        help_disable='Do not change the typing of moves.'
+    )
+    add_enable_disable_argument(
+        parser_move_randomization_group,
+        'rng-move-accuracy',
+        default=config.rng_move_accuracy,
+        help_enable='Randomize the accuracy of every move that uses the accuracy check. The accuracy of each move '
+                    'will be between 30% and 100%, divisible by 5, with a tendency towards 100% accurate moves.',
+        help_disable='Do not change the accuracy of moves.'
+    )
+    add_enable_disable_argument(
+        parser_move_randomization_group,
+        'rng-move-pp',
+        default=config.rng_move_pp,
+        help_enable='Randomize the PP of every move to a value betwen 5 and 40, divisible by 40.',
+        help_disable='Do not change the PP of moves.'
+    )
+
     parser_trainer_randomization_group = parser.add_argument_group('Trainer randomization options')
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
     parser_gift_pkmn_randomization_group = parser.add_argument_group('Gift/Starter Pokémon options')

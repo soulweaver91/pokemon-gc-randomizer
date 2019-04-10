@@ -915,6 +915,7 @@ class Move(Enum):
     WATER_PULSE = (0x160, "Water Pulse", Type.WATER, 60)
     DOOM_DESIRE = (0x161, "Doom Desire", Type.STEEL, 120)
     PSYCHO_BOOST = (0x162, "Psycho Boost", Type.PSYCHIC, 140)
+    UNUSED_0x163 = (0x163, "(unused)", Type.NORMAL, 0)
     SHADOW_BLITZ = (0x164, "Shadow Blitz", Type.SHADOW, 40)
     SHADOW_RUSH_COLO = (0x164, "Shadow Rush", Type.SHADOW, 90)
     SHADOW_RUSH_XD = (0x165, "Shadow Rush", Type.SHADOW, 55)

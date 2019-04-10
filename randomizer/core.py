@@ -57,8 +57,11 @@ class Randomizer:
             self.prepare_dump_folder()
 
         self.handler.open_archives()
-        self.handler.load_pokemon_data()
 
+        self.handler.load_move_data()
+        self.handler.randomize_moves()
+
+        self.handler.load_pokemon_data()
         if config.patch_impossible_evolutions:
             self.handler.patch_impossible_evolutions()
 
@@ -70,4 +73,5 @@ class Randomizer:
             self.handler.randomize_pokemon_abilities()
 
         self.handler.write_pokemon_data()
+        self.handler.write_move_data()
         self.handler.write_archives()
