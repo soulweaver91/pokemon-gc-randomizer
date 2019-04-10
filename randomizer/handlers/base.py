@@ -257,7 +257,7 @@ class BaseHandler:
     def load_pokemon_data(self):
         logging.debug('Starting to read Pokémon data into memory.')
         try:
-            common_rel = self.archives[b'common.fsys'].files['common_rel'].data
+            common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
             common_rel.seek(self.get_pokemon_data_offset())
 
             for i in range(1, self.POKEMON_DATA_LIST_LENGTH + 1):
@@ -310,7 +310,7 @@ class BaseHandler:
     def write_pokemon_data(self):
         logging.debug('Encoding Pokémon data in preparation to be written to the ISO.')
 
-        common_rel = self.archives[b'common.fsys'].files['common_rel'].data
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
         common_rel.seek(self.get_pokemon_data_offset())
 
         for i, pkmn in self.pokemon_data.items():

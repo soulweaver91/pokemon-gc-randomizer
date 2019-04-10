@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import pprint
-from collections import OrderedDict
 from io import BytesIO
 from struct import unpack, pack
 
@@ -14,12 +12,14 @@ from randomizer import config
 
 
 class FsysFile:
-    def __init__(self, fname, header, data, fsys_name=None):
-        logging.debug('Starting decoding file %s contained in fsys archive%s into memory.', fname,
+    def __init__(self, fname, header, data, duplicate_counter=0, fsys_name=None):
+        logging.debug('Starting decoding file %s contained in fsys archive%s into memory.',
+                      fname.decode('ascii', errors='replace'),
                       ' ' + fsys_name.decode('ascii', errors='replace') if fsys_name else '')
         self.fname = fname
         self.header = header
         self.data = BytesIO()
+        self.duplicate_counter = duplicate_counter
 
         decode(BytesIO(data[16:]), outfile=self.data)
         length = self.data.tell()
@@ -33,8 +33,10 @@ class FsysFile:
 
         if config.dump_files:
             dump_path = os.path.join(config.working_dir, 'dump',
-                                     self.fname if not fsys_name else '%s__%s' % (
-                                         fsys_name.decode('ascii', errors='replace'), self.fname))
+                                     self.fname if not fsys_name else '%s__%s%s' % (
+                                         fsys_name.decode('ascii', errors='replace'),
+                                         self.fname.decode('ascii', errors='replace'),
+                                         '' if self.duplicate_counter == 0 else '__' + str(self.duplicate_counter)))
             try:
                 with open(dump_path, 'wb') as f:
                     f.write(self.data.getvalue())
@@ -42,7 +44,7 @@ class FsysFile:
                 logging.warning('Couldn\'t dump the file %s, skipping dumping.', dump_path)
 
     def encode(self):
-        logging.debug('  Compressing %s.', self.fname)
+        logging.debug('  Compressing %s.', self.fname.encode('ascii', errors='replace'))
         self.data.seek(0)
         output = BytesIO()
         encode(self.data, outfile=output)
@@ -153,7 +155,8 @@ class FsysArchive:
         self.name = name
         self.header = None
         self.header2 = None
-        self.files = OrderedDict()
+        self.files = []
+        self.file_indices = {}
 
         header = self.header = FsysHeader1(data.read(36))
 
@@ -185,12 +188,11 @@ class FsysArchive:
             file_header = FsysFileHeader(data.read(48))
 
             # Get file name
-            file_name = '_unnamed_file_%d' % file_idx
             name_pointer = file_header.name_pointer_1 or file_header.name_pointer_2 or None
+            namebuf = bytearray(0)
             if name_pointer is not None:
                 data.seek(name_pointer)
 
-                namebuf = bytearray(0)
                 while len(namebuf) < 512:
                     byte = data.read(1)
                     if byte == b'\x00':
@@ -198,32 +200,42 @@ class FsysArchive:
 
                     namebuf.append(byte[0])
 
-                file_name = namebuf.decode('ascii', errors='replace')
+            duplicate_name_counter = 0
+            if namebuf.hex() in self.file_indices:
+                duplicate_name_counter = len(self.file_indices[namebuf.hex()])
+            else:
+                self.file_indices[namebuf.hex()] = []
 
-            logging.debug('  File: %s', file_name)
+            logging.debug('  File: %s', namebuf.decode('ascii', errors='replace'))
             logging.debug('  %d bytes compressed', file_header.data_size_compressed)
             logging.debug('  %d bytes uncompressed', file_header.data_size)
 
             data.seek(file_header.data_start)
-            self.files[file_name] = (FsysFile(file_name, file_header, data.read(file_header.data_size_compressed), fsys_name=name))
+            self.files.append(FsysFile(namebuf, file_header, data.read(file_header.data_size_compressed),
+                                       duplicate_counter=duplicate_name_counter, fsys_name=name))
+            self.file_indices[namebuf.hex()].append(len(self.files) - 1)
+
+    def get_file(self, name, idx=0):
+        file_idx = self.file_indices[name.hex()][idx]
+        return self.files[file_idx]
 
     @staticmethod
     def from_iso(iso, name):
-        logging.debug('Reading the FSYS file %s from the ISO.', name)
+        logging.debug('Reading the FSYS file %s from the ISO.', name.decode('ascii', errors='replace'))
         return FsysArchive(BytesIO(iso.readFile(name, 0)), name)
 
     def encode(self):
-        logging.debug('Starting to pack the FSYS %s.', self.name)
+        logging.debug('Starting to pack the FSYS %s.', self.name.decode('ascii', errors='replace'))
         encoded_fsys = BytesIO()
 
         # Encode files
-        encoded_files = [(n, *f.encode()) for n, f in self.files.items()]
+        encoded_files = [(f.fname, *f.encode()) for f in self.files]
         for i, f in enumerate(encoded_files):
             # Alignment
             encoded_files[i] = (f[0], f[1], f[2] + b'\x00' * (32 - len(f[2]) % 16))
 
         # Build name header
-        file_names = [f[0].encode('ascii', errors='replace') + b'\x00' for f in encoded_files]
+        file_names = [f[0] + b'\x00' for f in encoded_files]
         name_header = b''.join(file_names)
         if len(name_header) % 8 != 0:
             # alignment
