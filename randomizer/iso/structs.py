@@ -31,4 +31,4 @@ class LevelUpMoveEntry:
     def __init__(self, level, unknown1, move):
         self.level = level
         self.unknown1 = unknown1
-        self.move = Move.from_idx(move)
+        self.move = Move(move)

@@ -176,7 +176,7 @@ class XDMoveEntry(BaseMoveEntry):
         ) = unpack(self.SIGNATURE, data)
 
         self.type = Type(m_type)
-        self.move = Move.from_idx(idx)
+        self.move = Move(idx)
     pass
 
     def encode(self):

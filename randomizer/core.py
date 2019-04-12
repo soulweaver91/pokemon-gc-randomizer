@@ -58,14 +58,15 @@ class Randomizer:
 
         self.handler.open_archives()
 
-        self.handler.load_move_data()
-        self.handler.randomize_moves()
-
         self.handler.load_tm_data()
+        self.handler.load_move_data()
+        self.handler.load_pokemon_data()
+
+        # Each randomizing aspect is controlled independently for moves, so no need for the top-level check here.
+        self.handler.randomize_moves()
         if config.rng_tm_moves:
             self.handler.randomize_tms()
 
-        self.handler.load_pokemon_data()
         if config.patch_impossible_evolutions:
             self.handler.patch_impossible_evolutions()
 

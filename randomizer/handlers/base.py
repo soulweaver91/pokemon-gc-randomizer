@@ -66,7 +66,7 @@ class BasePokemon:
         self.egg_moves = []
         for move_entry in list(chunked(2, egg_moves_packed)):
             try:
-                move = Move.from_idx(unpack('>H', move_entry)[0])
+                move = Move(unpack('>H', move_entry)[0])
                 if move != Move.NONE:
                     self.egg_moves.append(move)
             except KeyError:
@@ -95,7 +95,7 @@ class BasePokemon:
         egg_moves = b''
         for i in range(0, 8):
             try:
-                egg_moves += pack('>H', self.egg_moves[i].idx)
+                egg_moves += pack('>H', self.egg_moves[i].value)
             except IndexError:
                 egg_moves += b'\x00\x00'
 
@@ -117,7 +117,7 @@ class BasePokemon:
         for i in range(0, 20):
             try:
                 level_up_moves += pack('>BBH', self.level_up_moves[i].level, self.level_up_moves[i].unknown1,
-                                       self.level_up_moves[i].move.idx)
+                                       self.level_up_moves[i].move.value)
             except IndexError:
                 level_up_moves += b'\x00\x00\x00\x00'
 
@@ -345,12 +345,14 @@ class BaseHandler:
                     pkmn.ability2.name if pkmn.ability2 != Ability.NONE else '',
                 )
                 logging.debug('  Learnset: %s', ', '.join([
-                    '%s (%d)' % (m.move.friendly_name, m.level) for m in pkmn.level_up_moves]))
-                logging.debug('  TMs: %s', ', '.join([
-                    'TM%02d' % (n + 1) for n, b in enumerate(pkmn.tm_compatibility) if b is True]))
-                logging.debug('  HMs: %s', ', '.join([
-                    'HM%02d' % (n + 1) for n, b in enumerate(pkmn.hm_compatibility) if b is True]))
-                logging.debug('  Egg moves: %s', ', '.join([m.friendly_name for m in pkmn.egg_moves]))
+                    '%s (%d)' % (m.move.name, m.level) for m in pkmn.level_up_moves]))
+                logging.debug('  TMs: %s',
+                              ', '.join(['TM%02d %s' % (n + 1, self.tm_data[n].name)
+                                        for n, b in enumerate(pkmn.tm_compatibility) if b is True]))
+                logging.debug('  HMs (not available): %s',
+                              ', '.join(['HM%02d' % (n + 1)
+                                         for n, b in enumerate(pkmn.hm_compatibility) if b is True]))
+                logging.debug('  Egg moves: %s', ', '.join([m.name for m in pkmn.egg_moves]))
                 for evo in pkmn.evolution:
                     if evo.type == EvolutionType.NONE:
                         continue
@@ -382,7 +384,7 @@ class BaseHandler:
                 logging.debug(
                     '  #%d %s, %s, %d BP, %d PP, %d%% accuracy',
                     i,
-                    Move.from_idx(i).friendly_name,
+                    self.move_data[i].move.name,
                     move.type.name,
                     move.power,
                     move.pp,
@@ -398,7 +400,7 @@ class BaseHandler:
         self.dol_file.seek(self.get_tm_data_offset())
         for i in range(0, 50):
             self.dol_file.seek(6, 1)
-            move = Move.from_idx(unpack(">H", self.dol_file.read(2))[0])
+            move = Move(unpack(">H", self.dol_file.read(2))[0])
             self.tm_data.append(move)
             logging.debug('  TM%02d contains %s', i + 1, move.name)
 
@@ -426,10 +428,11 @@ class BaseHandler:
         self.dol_file.seek(self.get_tm_data_offset())
         for m in self.tm_data:
             self.dol_file.seek(6, 1)
-            self.dol_file.write(pack(">H", m.idx))
+            self.dol_file.write(pack(">H", m.move.value))
 
     def get_available_regular_moves(self):
-        return [m for m in list(Move) if m not in [Move.STRUGGLE, Move.NONE] and m.idx < Move.UNUSED_0x163.idx]
+        return [m for _, m in self.move_data.items() if m.move not in [Move.STRUGGLE, Move.NONE]
+                and m.move.value < Move.UNUSED_0x163.value]
 
     def get_available_shadow_moves(self):
         raise AbstractHandlerMethodError()
@@ -477,7 +480,7 @@ class BaseHandler:
         logging.debug('Randomizing TM data.')
         self.tm_data = random.sample(self.get_available_regular_moves(), 50)
         for i, move in enumerate(self.tm_data):
-            logging.debug('  TM%02d now contains %s', i + 1, move.name)
+            logging.debug('  TM%02d now contains %s', i + 1, move.move.name)
 
     def patch_impossible_evolutions(self):
         # Plain trade evolution after evolving once
