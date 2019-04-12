@@ -61,6 +61,10 @@ class Randomizer:
         self.handler.load_move_data()
         self.handler.randomize_moves()
 
+        self.handler.load_tm_data()
+        if config.rng_tm_moves:
+            self.handler.randomize_tms()
+
         self.handler.load_pokemon_data()
         if config.patch_impossible_evolutions:
             self.handler.patch_impossible_evolutions()
@@ -74,4 +78,5 @@ class Randomizer:
 
         self.handler.write_pokemon_data()
         self.handler.write_move_data()
+        self.handler.write_tm_data()
         self.handler.write_archives()

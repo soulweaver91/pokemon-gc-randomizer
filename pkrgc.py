@@ -177,6 +177,13 @@ if __name__ == "__main__":
     parser_move_randomization_group = parser.add_argument_group('Move randomization options')
     add_enable_disable_argument(
         parser_move_randomization_group,
+        'rng-tm-moves',
+        default=config.rng_tm_moves,
+        help_enable='Randomize the moves taught by the 50 Technical Machines.',
+        help_disable='Do not change the PP of moves.'
+    )
+    add_enable_disable_argument(
+        parser_move_randomization_group,
         'rng-move-power',
         default=config.rng_move_power,
         help_enable='Randomize the base power of each damaging move to a value between 10 and 180, divisible by 5.',

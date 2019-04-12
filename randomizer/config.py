@@ -24,6 +24,7 @@ class RandomizerConfig:
             "rng_move_types": False,
             "rng_move_accuracy": False,
             "rng_move_pp": False,
+            "rng_tm_moves": True,
             "patch_impossible_evolutions": True
         }
 

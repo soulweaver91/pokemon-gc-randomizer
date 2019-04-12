@@ -253,3 +253,13 @@ class XDHandler(BaseHandler):
             raise NotImplementedError
         else:
             raise NotImplementedError
+
+    def get_tm_data_offset(self):
+        if self.region == IsoRegion.USA:
+            return 0x004023A0
+        elif self.region == IsoRegion.EUR:
+            return 0x0043CC80
+        elif self.region == IsoRegion.JPN:
+            raise NotImplementedError
+        else:
+            raise NotImplementedError

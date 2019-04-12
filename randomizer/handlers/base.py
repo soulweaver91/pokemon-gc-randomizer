@@ -5,6 +5,8 @@ import random
 import math
 from struct import unpack, pack
 
+import os
+
 from randomizer import config
 from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies, VALID_POKEMON_TYPES, Item
 from randomizer.iso.fsys import FsysArchive
@@ -265,9 +267,13 @@ class BaseMoveEntry:
 class BaseHandler:
     iso = None
     region = None
+
+    dol_file = None
+
     archives = dict()
     pokemon_data = dict()
     move_data = dict()
+    tm_data = []
 
     # these should be filled in in the derived handlers
     POKEMON_DATA_LIST_LENGTH = 0
@@ -283,6 +289,16 @@ class BaseHandler:
                                   if a not in [Ability.NONE, Ability.CACOPHONY]
                                   and a.name not in map(lambda n: n.upper(), config.rng_pkabi_ban)]
         self.normal_pokemon = []
+        self.dol_file = iso.open(b'start.dol')
+
+        if config.dump_files:
+            dump_path = os.path.join(config.working_dir, 'dump', 'start.dol')
+            try:
+                with open(dump_path, 'wb') as f:
+                    f.write(self.dol_file.read())
+            except IOError:
+                logging.warning('Couldn\'t dump the file %s, skipping dumping.', dump_path)
+
 
     def open_archives(self):
         raise AbstractHandlerMethodError()
@@ -377,6 +393,15 @@ class BaseHandler:
             logging.error('Couldn\'t read move data since the required data file was not loaded.')
             raise e
 
+    def load_tm_data(self):
+        logging.debug('Reading TM data from the executable binary.')
+        self.dol_file.seek(self.get_tm_data_offset())
+        for i in range(0, 50):
+            self.dol_file.seek(6, 1)
+            move = Move.from_idx(unpack(">H", self.dol_file.read(2))[0])
+            self.tm_data.append(move)
+            logging.debug('  TM%02d contains %s', i + 1, move.name)
+
     def write_pokemon_data(self):
         logging.debug('Encoding Pokémon data in preparation to be written to the ISO.')
 
@@ -397,8 +422,14 @@ class BaseHandler:
             logging.debug('Encoding index %d of %d...', i, self.MOVE_DATA_LIST_LENGTH)
             common_rel.write(move.encode())
 
-    def get_available_normal_moves(self):
-        return set(range(Move.POUND.value, Move.PSYCHO_BOOST.value)).remove([Move.STRUGGLE.value])
+    def write_tm_data(self):
+        self.dol_file.seek(self.get_tm_data_offset())
+        for m in self.tm_data:
+            self.dol_file.seek(6, 1)
+            self.dol_file.write(pack(">H", m.idx))
+
+    def get_available_regular_moves(self):
+        return [m for m in list(Move) if m not in [Move.STRUGGLE, Move.NONE] and m.idx < Move.UNUSED_0x163.idx]
 
     def get_available_shadow_moves(self):
         raise AbstractHandlerMethodError()
@@ -441,6 +472,13 @@ class BaseHandler:
             move.randomize(config.rng_move_types, config.rng_move_pp,
                            config.rng_move_power, config.rng_move_accuracy)
 
+    def randomize_tms(self):
+        # TODO: TM item descriptions should be updated with the newly selected moves' descriptions as well.
+        logging.debug('Randomizing TM data.')
+        self.tm_data = random.sample(self.get_available_regular_moves(), 50)
+        for i, move in enumerate(self.tm_data):
+            logging.debug('  TM%02d now contains %s', i + 1, move.name)
+
     def patch_impossible_evolutions(self):
         # Plain trade evolution after evolving once
         self.pokemon_data[PokemonSpecies.KADABRA].patch_evolution(0, EvolutionType.LEVEL_UP, 32)
@@ -471,10 +509,16 @@ class BaseHandler:
     def make_move_data(self, io_in, idx) -> BaseMoveEntry:
         raise AbstractHandlerMethodError()
 
+    # in common.fsys/common_rel
     def get_pokemon_data_offset(self):
         raise AbstractHandlerMethodError()
 
+    # in common.fsys/common_rel
     def get_move_data_offset(self):
+        raise AbstractHandlerMethodError()
+
+    # in start.dol
+    def get_tm_data_offset(self):
         raise AbstractHandlerMethodError()
 
     def get_first_stages(self):
