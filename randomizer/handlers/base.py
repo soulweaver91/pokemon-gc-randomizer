@@ -257,7 +257,7 @@ class BaseMoveEntry:
         if change_type and self.move not in [Move.CURSE, Move.STRUGGLE]:
             self.type = random.choice(VALID_POKEMON_TYPES)
 
-        if change_power and self.power > 0:
+        if change_power and self.power > 10:
             self.power = random.randint(2, 18) * 5
 
         if change_acc and self.accuracy > 0:
