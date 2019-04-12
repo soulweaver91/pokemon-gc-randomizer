@@ -931,6 +931,10 @@ class Move(Enum):
     SHADOW_SHED = 0x174
     SHADOW_HALF = 0x175
 
+    @classmethod
+    def _missing_(cls, value):
+        return Move.NONE
+
 
 class Item(Enum):
     NONE = 0x0000

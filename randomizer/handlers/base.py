@@ -51,6 +51,9 @@ class BasePokemon:
         self.evolution = []
         self.level_up_moves = []
 
+    def __str__(self):
+        return "#%03d %s, %s/%s" % (self.natdex_no, self.species.name, self.type1.name, self.type2.name)
+
     def set_base_stats(self, *args):
         self.base_stats = StatSet(*args)
 
@@ -243,6 +246,9 @@ class BaseMoveEntry:
         self.anim_id = None
         self.desc_id = None
         self.move = None
+
+    def __str__(self):
+        return "%s (%s), %dBP, %d%%" % (self.move.name, self.type.name, self.power, self.accuracy)
 
     def encode(self):
         raise AbstractHandlerMethodError()
