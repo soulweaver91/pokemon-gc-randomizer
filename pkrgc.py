@@ -203,7 +203,7 @@ if __name__ == "__main__":
         'rng-move-accuracy',
         default=config.rng_move_accuracy,
         help_enable='Randomize the accuracy of every move that uses the accuracy check. The accuracy of each move '
-                    'will be between 30% and 100%, divisible by 5, with a tendency towards 100% accurate moves.',
+                    'will be between 30%% and 100%%, divisible by 5, with a tendency towards 100%% accurate moves.',
         help_disable='Do not change the accuracy of moves.'
     )
     add_enable_disable_argument(
