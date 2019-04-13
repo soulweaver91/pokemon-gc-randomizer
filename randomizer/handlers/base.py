@@ -214,6 +214,78 @@ class BasePokemon:
 
         return self.ability1, self.ability2
 
+    def select_random_move_from_movepool(self, movepool, allow_all_types, force_same_type, force_offensive):
+        viable_moves = [
+            m for m in movepool
+            if (
+                not force_offensive or m.power > 0
+            ) and (
+                allow_all_types
+                or m.power == 0
+                or m.type in [Type.NORMAL, self.type1, self.type2]
+            ) and (
+                not force_same_type
+                or m.type in [self.type1, self.type2]
+            ) and not (
+                config.rng_pkmoves_no_dupes
+                and m.move in [n.move for n in self.level_up_moves]
+            )
+        ]
+
+        return random.choice(viable_moves)
+
+    def randomize_moveset(self, movepool):
+        if config.rng_pkmoves_lv1_fullset:
+            lv1_move_count = len([m for m in self.level_up_moves if m.move != Move.NONE and m.level == 1])
+            for i in range(lv1_move_count, 4):
+                self.level_up_moves.insert(0, LevelUpMoveEntry(1, 0, Move.NONE))
+            if len(self.level_up_moves) > 20:
+                self.level_up_moves = self.level_up_moves[0:20]
+
+        # Already assigned moves are possibly filtered out
+        for move in self.level_up_moves:
+            move.move = Move.NONE
+
+        offensive_moves = []
+        offensive_move_drought = 4 if config.rng_pkmoves_lv1_ensure_damaging else 0
+
+        for i, slot in enumerate(self.level_up_moves):
+            allow_all_types = random.random() < (config.rng_pkmoves_any_type_ratio / 100)
+            force_offensive = random.random() < (config.rng_pkmoves_min_damaging_ratio / 100)
+            force_same_type = random.random() < (config.rng_pkmoves_min_own_type_ratio / 100)
+
+            try:
+                if config.rng_pkmoves_ensure_damaging_interval and offensive_move_drought > 3:
+                    offensive_move_drought = 0
+                    move = self.select_random_move_from_movepool(
+                        movepool, allow_all_types, force_same_type, True)
+                else:
+                    move = self.select_random_move_from_movepool(
+                        movepool, allow_all_types, force_same_type, force_offensive)
+            except IndexError:
+                # Restrictions exhausted all available move options, so add one with no restrictions
+                move = self.select_random_move_from_movepool(
+                    movepool, True, False, False)
+
+            slot.move = move.move
+            if move.power == 0:
+                offensive_move_drought += 1
+            else:
+                offensive_move_drought = 0
+                # Exclude special damage moves (1 BP) from rearrangement
+                if move.power >= 10:
+                    offensive_moves.append((i, move))
+
+        if config.rng_pkmoves_dmg_progression:
+            indices = [m[0] for m in offensive_moves]
+            offensive_moves = sorted(offensive_moves, key=lambda m: m[1].power)
+
+            for i, m in enumerate(offensive_moves):
+                self.level_up_moves[indices[i]].move = m[1].move
+
+        logging.debug('%s now learns %s', self.species.name,
+                      ', '.join(['%s on level %d' % (m.move.name, m.level) for m in self.level_up_moves]))
+
     def patch_evolution(self, index, evo_type, level_or_item):
         self.evolution[index].type = evo_type
         self.evolution[index].level = level_or_item.value if type(level_or_item) == Item else level_or_item
@@ -293,7 +365,8 @@ class BaseHandler:
         # Strategy Memo. It might not work anyways, and its effect is a duplicate one, so it isn't needed in any case.
         self.allowed_abilities = [a for a in list(Ability)
                                   if a not in [Ability.NONE, Ability.CACOPHONY]
-                                  and a.name not in map(lambda n: n.upper(), config.rng_pkabi_ban)]
+                                  and a.name not in [n.upper() for n in config.rng_pkabi_ban]]
+        self.banned_learnset_moves = [n.upper() for n in config.rng_pkmoves_ban]
         self.normal_pokemon = []
         self.dol_file = iso.open(b'start.dol')
 
@@ -474,7 +547,9 @@ class BaseHandler:
                                             recurse=config.rng_pkabi_family, allowed_abilities=self.allowed_abilities)
 
     def randomize_pokemon_movesets(self):
-        pass
+        allowed_moves = [m for m in self.get_available_regular_moves() if m.move.name not in self.banned_learnset_moves]
+        for pkmn in self.normal_pokemon:
+            pkmn.randomize_moveset(allowed_moves)
 
     def randomize_moves(self):
         for i, move in self.move_data.items():

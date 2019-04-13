@@ -178,7 +178,89 @@ if __name__ == "__main__":
         help='Forbid specific abilities to be given to any Pokémon whose ability is randomized. '
              'A list of abilities in upper case, with spaces converted to underscores, is expected. '
              'You can allow all abilities by providing the single ability name NONE. '
-             '(Default: WONDER_GUARD, FORECAST)'
+             '(Default: ' + (', '.join(config.rng_pkabi_ban)) + ')'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkmoves',
+        default=config.rng_pkmoves,
+        help_enable='Enable Pokémon moveset randomization.',
+        help_disable='Keep the original Pokémon movesets. Other --rng-pkmoves flags take no effect.'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkmoves-dmg-progression',
+        default=config.rng_pkmoves_dmg_progression,
+        help_enable='Rearrange damaging moves so thaat weaker moves are learned first.',
+        help_disable='Don\'t rearrange damaging moves.'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkmoves-lv1-fullset',
+        default=config.rng_pkmoves_lv1_fullset,
+        help_enable='Provide every Pokémon with four moves at level one.',
+        help_disable='Do not add additional level one move slots.'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkmoves-ensure-damaging-first',
+        default=config.rng_pkmoves_lv1_ensure_damaging,
+        help_enable='Make sure that the first move the Pokémon learns is a damaging move.',
+        help_disable='The first move the Pokémon learns can be a status move.'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkmoves-ensure-damaging-interval',
+        default=config.rng_pkmoves_ensure_damaging_interval,
+        help_enable='Make sure at least every fourth move the Pokémon learns is a damaging move.',
+        help_disable='The spacing of damaging moves is not controlled.'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pkmoves-any-type-ratio',
+        action='store',
+        default=config.rng_pkmoves_any_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of a movepool of a randomized learned move containing damaging moves '
+             'of a type the Pokémon doesn\'t have. All non-damaging moves will still be available for each move slot, '
+             'as well as Normal-type moves, unless otherwise enforced by --rng-pkmoves-min-own-type-ratio.'
+             '(Default: 25)'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pkmoves-min-damaging-ratio',
+        action='store',
+        default=config.rng_pkmoves_min_damaging_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of a movepool for choosing a randomized learned move only containing '
+             'damaging moves.'
+             '(Default: 25)'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pkmoves-min-own-type-ratio',
+        action='store',
+        default=config.rng_pkmoves_min_own_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of a movepool for choosing a randomized learned move only containing '
+             ' moves with a type of that Pokémon itself.'
+             '(Default: 15)'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pkmoves-ban',
+        nargs='*',
+        metavar='MOVE',
+        help='Forbid specific moves to be put into the moveset of any Pokémon whose move pool is randomized. '
+             'A list of moves in upper case, with spaces converted to underscores, is expected. '
+             'You can allow all moves by providing the single move name NONE. '
+             '(Default: ' + (', '.join(config.rng_pkmoves_ban)) + ')'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkmoves-no-dupes',
+        default=config.rng_pkmoves_no_dupes,
+        help_enable='Make sure any Pokémon doesn\'t learn the same move twice.',
+        help_disable='Pokémon are allowed to learn the same move multiple times.'
     )
 
     parser_move_randomization_group = parser.add_argument_group('Move randomization options')
