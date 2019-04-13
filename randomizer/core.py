@@ -62,8 +62,8 @@ class Randomizer:
         self.handler.load_move_data()
         self.handler.load_pokemon_data()
 
-        # Each randomizing aspect is controlled independently for moves, so no need for the top-level check here.
-        self.handler.randomize_moves()
+        if config.rng_move_types or config.rng_move_pp or config.rng_move_power or config.rng_move_accuracy:
+            self.handler.randomize_moves()
         if config.rng_tm_moves:
             self.handler.randomize_tms()
 

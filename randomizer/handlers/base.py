@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import random
-import math
 from struct import unpack, pack
 
 import os
@@ -159,6 +158,9 @@ class BasePokemon:
                 new_stats[stat_idx] += 1
 
         self.base_stats = StatSet(*new_stats)
+
+        logging.debug('%s\'s base stats are now %s', self.species.name, self.base_stats)
+
         return stat_distribution
 
     def randomize_types(self, previous_stage_types=None):
@@ -188,6 +190,11 @@ class BasePokemon:
                 # Normal/? types are never allowed unless the Pokémon is monotype
                 self.type2 = random.choice([t for t in VALID_POKEMON_TYPES if t != Type.NORMAL])
 
+        logging.debug('%s is now the %s%s%s type', self.species.name,
+                      self.type1.name,
+                      '/' if self.type1 != self.type2 else '',
+                      self.type2.name if self.type1 != self.type2 else '')
+
         return self.type1, self.type2
 
     def randomize_abilities(self, allowed_abilities, previous_stage_abilities=None):
@@ -214,6 +221,12 @@ class BasePokemon:
 
         if self.ability1 == self.ability2:
             self.ability2 = Ability.NONE
+
+        logging.debug('%s has now the abilit%s %s%s%s', self.species.name,
+                      'ies' if self.ability2 != Ability.NONE else 'y',
+                      self.ability1.name,
+                      '/' if self.ability2 != Ability.NONE else '',
+                      self.ability2.name if self.ability2 != Ability.NONE else '')
 
         return self.ability1, self.ability2
 
@@ -381,7 +394,6 @@ class BaseHandler:
             except IOError:
                 logging.warning('Couldn\'t dump the file %s, skipping dumping.', dump_path)
 
-
     def open_archives(self):
         raise AbstractHandlerMethodError()
 
@@ -392,6 +404,7 @@ class BaseHandler:
         raise AbstractHandlerMethodError()
 
     def write_archive(self, name):
+        logging.info('Writing archive %s into the file.' % name.decode('ascii', errors='ignore'))
         data = self.archives[name].encode()
 
         self.iso.resizeFile(name, len(data))
@@ -399,7 +412,7 @@ class BaseHandler:
         logging.debug('Wrote %s (%d bytes) back into the ISO.', name.decode('ascii', errors='ignore'), len(data))
 
     def load_pokemon_data(self):
-        logging.debug('Starting to read Pokémon data into memory.')
+        logging.info('Reading Pokémon data from the archive file.')
         try:
             common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
             common_rel.seek(self.get_pokemon_data_offset())
@@ -454,7 +467,7 @@ class BaseHandler:
             raise e
 
     def load_move_data(self):
-        logging.debug('Starting to read move data into memory.')
+        logging.info('Reading move data from the archive file.')
         try:
             common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
             common_rel.seek(self.get_move_data_offset())
@@ -500,13 +513,14 @@ class BaseHandler:
         logging.debug('Encoding move data in preparation to be written to the ISO.')
 
         common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
-        common_rel.seek(self.get_move_data_offset())
+        common_rel.seek(self.move_data_offset)
 
         for i, move in self.move_data.items():
             logging.debug('Encoding index %d of %d...', i, self.MOVE_DATA_LIST_LENGTH)
             common_rel.write(move.encode())
 
     def write_tm_data(self):
+        logging.info('Writing TM data into the executable binary.')
         self.dol_file.seek(self.get_tm_data_offset())
         for m in self.tm_data:
             self.dol_file.seek(6, 1)
@@ -535,38 +549,44 @@ class BaseHandler:
                                                     previous_result=randomization_result, recurse=True, **kwargs)
 
     def randomize_pokemon_stats(self):
+        logging.info('Randomizing Pokémon stats.')
         self.randomize_pokemon_aspect_recur('base_stats', 'stat_distribution',
                                             self.randomize_pokemon_get_root_level_list(config.rng_pkstats_family),
                                             recurse=config.rng_pkstats_family, keep_bst=config.rng_pkstats_retain_bst)
 
     def randomize_pokemon_types(self):
+        logging.info('Randomizing Pokémon types.')
         self.randomize_pokemon_aspect_recur('types', 'previous_stage_types',
                                             self.randomize_pokemon_get_root_level_list(config.rng_pktypes_family),
                                             recurse=config.rng_pktypes_family)
 
     def randomize_pokemon_abilities(self):
+        logging.info('Randomizing Pokémon abilities.')
         self.randomize_pokemon_aspect_recur('abilities', 'previous_stage_abilities',
                                             self.randomize_pokemon_get_root_level_list(config.rng_pkabi_family),
                                             recurse=config.rng_pkabi_family, allowed_abilities=self.allowed_abilities)
 
     def randomize_pokemon_movesets(self):
+        logging.info('Randomizing Pokémon movesets.')
         allowed_moves = [m for m in self.get_available_regular_moves() if m.move.name not in self.banned_learnset_moves]
         for pkmn in self.normal_pokemon:
             pkmn.randomize_moveset(allowed_moves)
 
     def randomize_moves(self):
+        logging.info('Randomizing move data.')
         for i, move in self.move_data.items():
             move.randomize(config.rng_move_types, config.rng_move_pp,
                            config.rng_move_power, config.rng_move_accuracy)
 
     def randomize_tms(self):
         # TODO: TM item descriptions should be updated with the newly selected moves' descriptions as well.
-        logging.debug('Randomizing TM data.')
+        logging.info('Randomizing TM data.')
         self.tm_data = random.sample(self.get_available_regular_moves(), 50)
         for i, move in enumerate(self.tm_data):
             logging.debug('  TM%02d now contains %s', i + 1, move.move.name)
 
     def patch_impossible_evolutions(self):
+        logging.info('Patching impossible evolutions.')
         # Plain trade evolution after evolving once
         self.pokemon_data[PokemonSpecies.KADABRA].patch_evolution(0, EvolutionType.LEVEL_UP, 32)
         self.pokemon_data[PokemonSpecies.MACHOKE].patch_evolution(0, EvolutionType.LEVEL_UP, 37)
