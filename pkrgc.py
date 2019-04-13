@@ -28,11 +28,23 @@ def add_enable_disable_argument(p, name, default=False, help_enable=None, help_d
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Randomizes a Pokémon Colosseum or XD ISO."
+        description="Randomizes a Pokémon Colosseum or XD ISO.",
+        add_help=False
     )
 
     parser_behavior_group = parser.add_argument_group('Tool behavior')
 
+    parser_behavior_group.add_argument(
+        '-v', '--version',
+        action='version',
+        help="Display the program version and exit.",
+        version="{} version {}".format(PROG_NAME, PROG_VERSION)
+    )
+    parser_behavior_group.add_argument(
+        '-h', '--help',
+        action='help',
+        help="Display this help message and exit."
+    )
     # TODO: copy this file elsewhere so that the original stays untouched
     parser_behavior_group.add_argument(
         'iso_path',
@@ -55,11 +67,6 @@ if __name__ == "__main__":
         action='store_true',
         help='Dumps the files extracted from the ISO and the files to be written to the ISO. '
              'This option is only useful to you if you are a developer.'
-    )
-    parser_behavior_group.add_argument(
-        '-v', '--version',
-        action='version',
-        version="{} version {}".format(PROG_NAME, PROG_VERSION)
     )
 
     parser_pkmn_randomization_group = parser.add_argument_group('Pokémon randomization options')
