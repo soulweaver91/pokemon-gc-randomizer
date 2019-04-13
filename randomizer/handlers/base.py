@@ -395,13 +395,16 @@ class BaseHandler:
                 logging.warning('Couldn\'t dump the file %s, skipping dumping.', dump_path)
 
     def open_archives(self):
-        raise AbstractHandlerMethodError()
+        for archive in self.archive_list:
+            self.open_archive(archive)
 
     def open_archive(self, name):
         self.archives[name] = FsysArchive.from_iso(self.iso, bytes(name))
 
     def write_archives(self):
-        raise AbstractHandlerMethodError()
+        logging.info('Compressing and writing archive files back into the ISO. Be patient, this may take a while!')
+        for archive in self.archive_list:
+            self.write_archive(archive)
 
     def write_archive(self, name):
         logging.info('Writing archive %s into the file.' % name.decode('ascii', errors='ignore'))
@@ -415,7 +418,7 @@ class BaseHandler:
         logging.info('Reading Pokémon data from the archive file.')
         try:
             common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
-            common_rel.seek(self.get_pokemon_data_offset())
+            common_rel.seek(self.pokemon_data_offset)
 
             for i in range(1, self.POKEMON_DATA_LIST_LENGTH + 1):
                 logging.debug('Reading index %d of %d...', i, self.POKEMON_DATA_LIST_LENGTH)
@@ -470,7 +473,7 @@ class BaseHandler:
         logging.info('Reading move data from the archive file.')
         try:
             common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
-            common_rel.seek(self.get_move_data_offset())
+            common_rel.seek(self.move_data_offset)
 
             for i in range(1, self.MOVE_DATA_LIST_LENGTH + 1):
                 logging.debug('Reading index %d of %d...', i, self.MOVE_DATA_LIST_LENGTH)
@@ -492,7 +495,7 @@ class BaseHandler:
 
     def load_tm_data(self):
         logging.debug('Reading TM data from the executable binary.')
-        self.dol_file.seek(self.get_tm_data_offset())
+        self.dol_file.seek(self.tm_data_offset)
         for i in range(0, 50):
             self.dol_file.seek(6, 1)
             move = Move(unpack(">H", self.dol_file.read(2))[0])
@@ -503,7 +506,7 @@ class BaseHandler:
         logging.debug('Encoding Pokémon data in preparation to be written to the ISO.')
 
         common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
-        common_rel.seek(self.get_pokemon_data_offset())
+        common_rel.seek(self.pokemon_data_offset)
 
         for i, pkmn in self.pokemon_data.items():
             logging.debug('Encoding index %d of %d...', i, self.POKEMON_DATA_LIST_LENGTH)
@@ -521,7 +524,7 @@ class BaseHandler:
 
     def write_tm_data(self):
         logging.info('Writing TM data into the executable binary.')
-        self.dol_file.seek(self.get_tm_data_offset())
+        self.dol_file.seek(self.tm_data_offset)
         for m in self.tm_data:
             self.dol_file.seek(6, 1)
             self.dol_file.write(pack(">H", m.move.value))
@@ -616,16 +619,23 @@ class BaseHandler:
     def make_move_data(self, io_in, idx) -> BaseMoveEntry:
         raise AbstractHandlerMethodError()
 
-    # in common.fsys/common_rel
-    def get_pokemon_data_offset(self):
+    @property
+    def archive_list(self):
         raise AbstractHandlerMethodError()
 
     # in common.fsys/common_rel
-    def get_move_data_offset(self):
+    @property
+    def pokemon_data_offset(self):
+        raise AbstractHandlerMethodError()
+
+    # in common.fsys/common_rel
+    @property
+    def move_data_offset(self):
         raise AbstractHandlerMethodError()
 
     # in start.dol
-    def get_tm_data_offset(self):
+    @property
+    def tm_data_offset(self):
         raise AbstractHandlerMethodError()
 
     def get_first_stages(self):

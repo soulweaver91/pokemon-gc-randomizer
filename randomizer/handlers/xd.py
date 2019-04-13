@@ -221,20 +221,20 @@ class XDHandler(BaseHandler):
     def get_available_shadow_moves(self):
         return set(range(Move.SHADOW_BLITZ.value, Move.SHADOW_HALF.value))
 
-    def open_archives(self):
-        self.open_archive(b'common.fsys')
-        # self.open_archive(b'deck_archive.fsys')
-
     def make_pokemon_data(self, io_in, idx):
         return XDPokemon(io_in.read(0x124), idx)
 
     def make_move_data(self, io_in, idx):
         return XDMoveEntry(io_in.read(0x38), idx)
 
-    def write_archives(self):
-        self.write_archive(b'common.fsys')
+    @property
+    def archive_list(self):
+        return [
+            b'common.fsys'
+        ]
 
-    def get_pokemon_data_offset(self):
+    @property
+    def pokemon_data_offset(self):
         if self.region == IsoRegion.USA:
             return 0x00029ECC
         elif self.region == IsoRegion.EUR:
@@ -244,7 +244,8 @@ class XDHandler(BaseHandler):
         else:
             raise NotImplementedError
 
-    def get_move_data_offset(self):
+    @property
+    def move_data_offset(self):
         if self.region == IsoRegion.USA:
             return 0x000A2748
         elif self.region == IsoRegion.EUR:
@@ -254,7 +255,8 @@ class XDHandler(BaseHandler):
         else:
             raise NotImplementedError
 
-    def get_tm_data_offset(self):
+    @property
+    def tm_data_offset(self):
         if self.region == IsoRegion.USA:
             return 0x004023A0
         elif self.region == IsoRegion.EUR:
