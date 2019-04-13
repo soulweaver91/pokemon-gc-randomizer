@@ -201,7 +201,7 @@ class BasePokemon:
             self.ability1 = random.choice(allowed_abilities)
 
             if random.random() < config.rng_pkabi_monoabi_ratio / 100:
-                self.ability2 = self.ability1
+                self.ability2 = Ability.NONE
             else:
                 self.ability2 = random.choice(allowed_abilities)
 
@@ -210,7 +210,10 @@ class BasePokemon:
         if config.rng_pkstats_wg_1hp and (
                 self.ability1 == Ability.WONDER_GUARD or self.ability2 == Ability.WONDER_GUARD):
             self.ability1 = Ability.WONDER_GUARD
-            self.ability2 = Ability.WONDER_GUARD
+            self.ability2 = Ability.NONE
+
+        if self.ability1 == self.ability2:
+            self.ability2 = Ability.NONE
 
         return self.ability1, self.ability2
 
