@@ -125,9 +125,12 @@ class BasePokemon:
 
         return level_up_moves
 
-    def randomize_base_stats(self, keep_bst, stat_distribution=None):
+    def randomize_base_stats(self, keep_bst, stat_distribution=None, list_index=None):
         if self.base_stats.total == 0:
             return
+
+        if list_index is not None and list_index > 0:
+            random.shuffle(stat_distribution)
 
         new_bst = self.base_stats.total if keep_bst else round(
             min(RANDOM_BST_MAX, max(RANDOM_BST_MIN, random.gauss(
@@ -136,7 +139,7 @@ class BasePokemon:
         )
 
         if stat_distribution is None:
-            stat_distribution = [max(0, random.gauss(1, 0.25)) for _ in range(0, 6)]
+            stat_distribution = [max(0, random.gauss(1, config.rng_pkstats_variance)) for _ in range(0, 6)]
 
         multiplier = sum(stat_distribution) / 6 * (new_bst / 6)
 
@@ -540,22 +543,29 @@ class BaseHandler:
         return self.get_first_stages() if condition else self.normal_pokemon
 
     def randomize_pokemon_aspect_recur(self, aspect, result_arg_name, pkmn_list, recurse,
-                                       previous_result=None, **kwargs):
-        for pkmn in pkmn_list:
-            randomization_result = getattr(pkmn, 'randomize_' + aspect)(
-                **{result_arg_name: previous_result}, **kwargs)
+                                       previous_result=None, pass_index=False, **kwargs):
+        for i, pkmn in enumerate(pkmn_list):
+            args = {
+                result_arg_name:  previous_result
+            }
+            if pass_index and recurse and previous_result is not None:
+                args['list_index'] = i
+
+            randomization_result = getattr(pkmn, 'randomize_' + aspect)(**args, **kwargs)
             if recurse:
                 evolution_targets = [self.pokemon_data[evo.evolves_to.value] for evo in pkmn.evolution
                                      if evo.evolves_to is not PokemonSpecies.NONE]
 
                 self.randomize_pokemon_aspect_recur(aspect, result_arg_name, evolution_targets,
-                                                    previous_result=randomization_result, recurse=True, **kwargs)
+                                                    previous_result=randomization_result, recurse=True,
+                                                    pass_index=pass_index, **kwargs)
 
     def randomize_pokemon_stats(self):
         logging.info('Randomizing Pokémon stats.')
         self.randomize_pokemon_aspect_recur('base_stats', 'stat_distribution',
                                             self.randomize_pokemon_get_root_level_list(config.rng_pkstats_family),
-                                            recurse=config.rng_pkstats_family, keep_bst=config.rng_pkstats_retain_bst)
+                                            recurse=config.rng_pkstats_family, pass_index=True,
+                                            keep_bst=config.rng_pkstats_retain_bst)
 
     def randomize_pokemon_types(self):
         logging.info('Randomizing Pokémon types.')

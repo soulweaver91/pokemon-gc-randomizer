@@ -94,6 +94,25 @@ if __name__ == "__main__":
     )
     add_enable_disable_argument(
         parser_pkmn_randomization_group,
+        'rng-pkstats-family-vary-branched-evo',
+        default=config.rng_pkstats_family_vary_branched_evo,
+        help_enable='Shuffle the base stat factors for evolutions other than the first when the Pokémon has more '
+                    'than one evolution.',
+        help_disable='Use the same base stat factors even with branched evolutions, leading to branches having '
+                     'very similar stats.'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pkstats-variance',
+        action='store',
+        default=config.rng_pkstats_variance,
+        type=float,
+        metavar='VAR',
+        help='Decides the variance for the Gauss distribution according to which the base stat factors are generated. '
+             'Lower values result in more uniform stats, while higher values result in more extreme stats.'
+             '(Default: 0.35)'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
         'rng-pkstats-wg-1hp',
         default=config.rng_pkstats_wg_1hp,
         help_enable='A Pokémon that has Wonder Guard is also always set to have 1 HP.',
