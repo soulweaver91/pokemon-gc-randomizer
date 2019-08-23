@@ -305,6 +305,30 @@ class BasePokemon:
         logging.debug('%s now learns %s', self.species.name,
                       ', '.join(['%s on level %d' % (m.move.name, m.level) for m in self.level_up_moves]))
 
+    def randomize_tms(self, tm_data, previous_stage_tms=None):
+        for i, move in enumerate(tm_data):
+            if move.power == 0:
+                # Status move
+                ratio = config.rng_pktm_min_status_ratio
+            elif move.type == self.type1 or move.type == self.type2:
+                ratio = config.rng_pktm_min_own_type_ratio
+            elif move.type == Type.NORMAL:
+                ratio = config.rng_pktm_min_normal_type_ratio
+            else:
+                ratio = config.rng_pktm_min_other_type_ratio
+
+            self.tm_compatibility[i] = random.random() < ratio / 100
+
+        # Optionally mark previous stage learnable TMs as learnable by this Pokémon too
+        if previous_stage_tms is not None:
+            for i in range(50):
+                self.tm_compatibility[i] = self.tm_compatibility[i] or previous_stage_tms[i]
+
+        logging.debug('%s now learns the following TM moves: %s', self.species.name,
+                      ', '.join([tm_data[i].move.name for i, l in enumerate(self.tm_compatibility) if l is True]))
+
+        return self.tm_compatibility
+
     def patch_evolution(self, index, evo_type, level_or_item):
         self.evolution[index].type = evo_type
         self.evolution[index].level = level_or_item.value if type(level_or_item) == Item else level_or_item
@@ -584,6 +608,12 @@ class BaseHandler:
         allowed_moves = [m for m in self.get_available_regular_moves() if m.move.name not in self.banned_learnset_moves]
         for pkmn in self.normal_pokemon:
             pkmn.randomize_moveset(allowed_moves)
+
+    def randomize_pokemon_tms(self):
+        logging.info('Randomizing Pokémon TM learnsets.')
+        self.randomize_pokemon_aspect_recur('tms', 'previous_stage_tms',
+                                            self.randomize_pokemon_get_root_level_list(config.rng_pktm_family),
+                                            recurse=config.rng_pktm_family, tm_data=self.tm_data)
 
     def randomize_moves(self):
         logging.info('Randomizing move data.')

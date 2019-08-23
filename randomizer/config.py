@@ -32,6 +32,13 @@ class RandomizerConfig:
             "rng_pkmoves_any_type_ratio": 25,
             "rng_pkmoves_min_damaging_ratio": 25,
             "rng_pkmoves_min_own_type_ratio": 15,
+            "rng_pktm": True,
+            "rng_pktm_min_own_type_ratio": 90,
+            "rng_pktm_min_other_type_ratio": 40,
+            "rng_pktm_min_status_ratio": 75,
+            "rng_pktm_min_normal_type_ratio": 75,
+            "rng_pktm_family": True,
+            "rng_pktm_full_compat": False,
             "rng_move_power": False,
             "rng_move_types": False,
             "rng_move_accuracy": False,
@@ -44,6 +51,13 @@ class RandomizerConfig:
         for argn, argv in kwargs.items():
             if argn in self._config and argv is not None:
                 self._config[argn] = argv
+
+        if self._config["rng_pktm_full_compat"]:
+            self._config["rng_pktm_min_own_type_ratio"] = 100
+            self._config["rng_pktm_min_other_type_ratio"] = 100
+            self._config["rng_pktm_min_status_ratio"] = 100
+            self._config["rng_pktm_min_normal_type_ratio"] = 100
+
         pass
 
     def __getattr__(self, name):

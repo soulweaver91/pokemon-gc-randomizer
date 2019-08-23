@@ -281,6 +281,64 @@ if __name__ == "__main__":
         help_enable='Make sure any Pokémon doesn\'t learn the same move twice.',
         help_disable='Pokémon are allowed to learn the same move multiple times.'
     )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pktm',
+        default=config.rng_pktm,
+        help_enable='Enable Pokémon TM learnset randomization.',
+        help_disable='Keep the original Pokémon TM learnsets. Other --rng-pktm flags take no effect.'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pktm-min-own-type-ratio',
+        action='store',
+        default=config.rng_pktm_min_own_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn TMs that contain damaging moves '
+             'with the same type as the Pokémon itself.'
+             '(Default: 90)'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pktm-min-normal-type-ratio',
+        action='store',
+        default=config.rng_pktm_min_normal_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn TMs that contain Normal-type '
+             'damaging moves. This ratio is not used for Normal-type Pokémon themselves.'
+             '(Default: 75)'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pktm-min-other-type-ratio',
+        action='store',
+        default=config.rng_pktm_min_other_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn TMs that contain damaging moves '
+             'with a different type as the Pokémon itself, excluding Normal-type moves.'
+             '(Default: 40)'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pktm-min-status-ratio',
+        action='store',
+        default=config.rng_pktm_min_status_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn TMs that contain non-damaging'
+             ' moves. (Default: 75)'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pktm-family',
+        default=config.rng_pktm_family,
+        help_enable='Allow evolved Pokémon to always learn all TMs their pre-evolutions can learn.',
+        help_disable='Pre-evolution TM learnsets are not considered.'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pktm-full-compat',
+        action='store_true',
+        help='All Pokémon learn all TMs. This is a shorthand for setting all the other TM ratio variables to 100.'
+    )
 
     parser_move_randomization_group = parser.add_argument_group('Move randomization options')
     add_enable_disable_argument(

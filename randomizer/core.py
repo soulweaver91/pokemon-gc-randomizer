@@ -78,6 +78,8 @@ class Randomizer:
             self.handler.randomize_pokemon_abilities()
         if config.rng_pkmoves:
             self.handler.randomize_pokemon_movesets()
+        if config.rng_pktm:
+            self.handler.randomize_pokemon_tms()
 
         self.handler.write_pokemon_data()
         self.handler.write_move_data()
