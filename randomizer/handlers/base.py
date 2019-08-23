@@ -628,6 +628,9 @@ class BaseHandler:
         for i, move in enumerate(self.tm_data):
             logging.debug('  TM%02d now contains %s', i + 1, move.move.name)
 
+    def randomize_and_write_starter_data(self):
+        raise AbstractHandlerMethodError()
+
     def patch_impossible_evolutions(self):
         logging.info('Patching impossible evolutions.')
         # Plain trade evolution after evolving once
@@ -678,6 +681,11 @@ class BaseHandler:
     def tm_data_offset(self):
         raise AbstractHandlerMethodError()
 
+    # in start.dol
+    @property
+    def starter_data_offsets(self):
+        raise AbstractHandlerMethodError()
+
     def get_first_stages(self):
         pokemon_data = self.normal_pokemon
 
@@ -689,4 +697,17 @@ class BaseHandler:
                     first_stage_candidates.remove(evo.evolves_to)
 
         return [self.pokemon_data[p.value] for p in first_stage_candidates]
+
+    def get_random_starter(self, idx):
+        if len(config.rng_starters_fixed) > idx:
+            name = config.rng_starters_fixed[idx].upper()
+            try:
+                return self.pokemon_data[PokemonSpecies[name].value]
+            except KeyError:
+                raise ValueError("No such Pokémon: %s" % name)
+        else:
+            min_bst = min([p.base_stats.total for p in self.normal_pokemon if p.base_stats.total > 0])
+            max_bst = max(min_bst, config.rng_starters_max_bst)
+            return random.choice([p for p in self.normal_pokemon if p.base_stats.total <= max_bst])
+
 

@@ -382,7 +382,32 @@ if __name__ == "__main__":
 
     parser_trainer_randomization_group = parser.add_argument_group('Trainer randomization options')
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
+
     parser_gift_pkmn_randomization_group = parser.add_argument_group('Gift/Starter Pokémon options')
+    add_enable_disable_argument(
+        parser_gift_pkmn_randomization_group,
+        'rng-starters',
+        default=config.rng_starters,
+        help_enable='Enable editing starter Pokémon.',
+        help_disable='The default starter Pokémon are used.'
+    )
+    parser_gift_pkmn_randomization_group.add_argument(
+        '--rng-starters-fixed',
+        nargs='*',
+        metavar='SPECIES',
+        help='Rather than randomizing the starter Pokémon, specify which species the starter(s) should be. '
+             'For Colosseum, provide two species, and for XD, provide one. Note the non-standard spellings of the '
+             'following Pokémon that must be used: NIDORAN_F, NIDORAN_M, FARFETCH_D, MR_MIME'
+    )
+    parser_gift_pkmn_randomization_group.add_argument(
+        '--rng-starters-max-bst',
+        type=int,
+        metavar='BST',
+        default=config.rng_starters_max_bst,
+        help='Limit the base stats total of the starter Pokémon to be smaller or equal to this value. Set to a '
+             'high value to allow all Pokémon as starters. (Default: 500)'
+    )
+
     parser_wild_randomization_group = parser.add_argument_group('Poké Spot randomization options (XD)')
 
     parser_patches_group = parser.add_argument_group('Miscellaneous patches')

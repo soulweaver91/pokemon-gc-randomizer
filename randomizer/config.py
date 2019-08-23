@@ -44,6 +44,9 @@ class RandomizerConfig:
             "rng_move_accuracy": False,
             "rng_move_pp": False,
             "rng_tm_moves": True,
+            "rng_starters": True,
+            "rng_starters_fixed": [],
+            "rng_starters_max_bst": 500,
             "patch_impossible_evolutions": True
         }
 

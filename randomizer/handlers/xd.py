@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from struct import unpack, pack
+import logging
 
 from randomizer.constants import IsoRegion
 from randomizer.handlers.base import BasePokemon, BaseMoveEntry
@@ -227,6 +228,32 @@ class XDHandler(BaseHandler):
     def make_move_data(self, io_in, idx):
         return XDMoveEntry(io_in.read(0x38), idx)
 
+    def randomize_and_write_starter_data(self):
+        exp_values = {
+            ExpClass.ERRATIC: 1800,
+            ExpClass.FAST: 800,
+            ExpClass.MEDIUM_FAST: 1000,
+            ExpClass.MEDIUM_SLOW: 560,
+            ExpClass.SLOW: 1250,
+            ExpClass.FLUCTUATING: 540,
+        }
+
+        eevee = self.get_random_starter(0)
+        logging.info('Starter Eevee is now replaced with %s' % eevee.species.name)
+        moves = [m.move for m in eevee.level_up_moves if m.level <= 10][-4:]
+        while len(moves) < 4:
+            moves.append(Move.NONE)
+
+        self.dol_file.seek(self.starter_data_offsets[0])
+        self.dol_file.write(pack(">H", eevee.species.value))
+        self.dol_file.seek(14, 1)
+        for i in range(4):
+            self.dol_file.write(pack(">H", moves[i].value))
+            self.dol_file.seek(2, 1)
+        self.dol_file.seek(0x44, 1)
+        self.dol_file.write(pack(">H", exp_values[eevee.exp_class]))
+
+
     @property
     def archive_list(self):
         return [
@@ -261,6 +288,23 @@ class XDHandler(BaseHandler):
             return 0x004023A0
         elif self.region == IsoRegion.EUR:
             return 0x0043CC80
+        elif self.region == IsoRegion.JPN:
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    @property
+    def starter_data_offsets(self):
+        if self.region == IsoRegion.USA:
+            return [
+                0x001CBC52,
+                None
+            ]
+        elif self.region == IsoRegion.EUR:
+            return [
+                0x001CD726,
+                None
+            ]
         elif self.region == IsoRegion.JPN:
             raise NotImplementedError
         else:
