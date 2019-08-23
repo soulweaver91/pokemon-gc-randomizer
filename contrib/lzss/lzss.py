@@ -2,7 +2,7 @@
 Based on the unfit implementation from https://gist.github.com/nucular/258d544bbd1ba401232ae83a11bd8857
 with default values also changed for the purposes of this project.
 
-Original C implementation by Haruhiko Okumura (public domain)
+Original C implementation by Okumura Haruhiko (public domain)
 """
 
 import logging
@@ -74,6 +74,11 @@ class LZSSEncoder(LZSSBase):
         self.data_buffer.extend(self.get_buffer_ref_bytes(x, y))
         self.store_reference_flag()
 
+    # TODO: this is slooooooooooooooooooow.
+    # I had adapted the LZSS encoder from QuickBMS previously, but it didn't seem to work (the ROM crashed on boot), so
+    # I threw the implementation away before the first commit in the repository. Later it was apparent that the problem
+    # was likely the incorrect data alignment and not the encoding process; it would probably be worth it to try that
+    # approach again.
     def encode(self):
         F2 = self.F + self.P
 
