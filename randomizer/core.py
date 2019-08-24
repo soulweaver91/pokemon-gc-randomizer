@@ -70,6 +70,8 @@ class Randomizer:
         if config.patch_impossible_evolutions:
             self.handler.patch_impossible_evolutions()
 
+        if config.rng_pkevo:
+            self.handler.randomize_pokemon_evolution()
         if config.rng_pkstats:
             self.handler.randomize_pokemon_stats()
         if config.rng_pktypes:

@@ -10,8 +10,7 @@ from randomizer import config
 from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies, VALID_POKEMON_TYPES, Item
 from randomizer.iso.fsys import FsysArchive
 from randomizer.iso.structs import StatSet, EvoEntry, LevelUpMoveEntry
-from randomizer.util import chunked
-
+from randomizer.util import chunked, flatten
 
 RANDOM_BST_MIN = 120
 RANDOM_BST_MAX = 800
@@ -491,7 +490,7 @@ class BaseHandler:
                     logging.debug('  Evolves to %s %s(%s)',
                                   PokemonSpecies(evo.evolves_to).name, evo_specifier, evo.type.name)
 
-            self.normal_pokemon = list(filter(lambda pkmn: pkmn.natdex_no > 0, self.pokemon_data.values()))
+            self.normal_pokemon = list(filter(lambda pkmn: 0 < pkmn.natdex_no < 388, self.pokemon_data.values()))
         except KeyError as e:
             logging.error('Couldn\'t read Pokémon data since the required data file was not loaded.')
             raise e
@@ -614,6 +613,46 @@ class BaseHandler:
         self.randomize_pokemon_aspect_recur('tms', 'previous_stage_tms',
                                             self.randomize_pokemon_get_root_level_list(config.rng_pktm_family),
                                             recurse=config.rng_pktm_family, tm_data=self.tm_data)
+
+    def randomize_pokemon_evolutions_pass(self, evolvers, evolutions):
+        def debug_message(pkmn):
+            new_evos = [e.evolves_to.name for e in pkmn.evolution
+                        if e.evolves_to != PokemonSpecies.NONE]
+            if len(new_evos) == 0:
+                return
+            logging.debug('%s now evolves into %s' % (pkmn.species.name, ', '.join(new_evos)))
+
+        if config.rng_pkevo_shuffle:
+            evolutions = [e for e in evolutions]
+            random.shuffle(evolutions)
+            for evolver in evolvers:
+                for evo in evolver.evolution:
+                    if evo.evolves_to != PokemonSpecies.NONE:
+                        # We should always have the right amount of evolutions to pop from the list.
+                        evo.evolves_to = evolutions.pop().species
+                debug_message(evolver)
+        else:
+            for evolver in evolvers:
+                for evo in evolver.evolution:
+                    if evo.evolves_to != PokemonSpecies.NONE:
+                        evo.evolves_to = random.choice(evolutions).species
+                debug_message(evolver)
+        pass
+
+    def randomize_pokemon_evolution(self):
+        logging.info('Randomizing Pokémon evolutions.')
+        if config.rng_pkevo_samestage:
+            current_stage = self.get_first_stages()
+            while len(current_stage) > 0:
+                next_stage = [
+                    self.pokemon_data[e.evolves_to.value] for e in flatten([p.evolution for p in current_stage])
+                    if e.evolves_to != PokemonSpecies.NONE
+                ]
+
+                self.randomize_pokemon_evolutions_pass(current_stage, next_stage)
+                current_stage = next_stage
+        else:
+            self.randomize_pokemon_evolutions_pass(self.normal_pokemon, self.normal_pokemon)
 
     def randomize_moves(self):
         logging.info('Randomizing move data.')

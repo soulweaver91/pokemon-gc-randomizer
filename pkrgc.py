@@ -339,6 +339,30 @@ if __name__ == "__main__":
         action='store_true',
         help='All Pokémon learn all TMs. This is a shorthand for setting all the other TM ratio variables to 100.'
     )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkevo',
+        default=config.rng_pkevo,
+        help_enable='Randomize the evolutions of Pokémon that originally evolve.',
+        help_disable='Keep original Pokémon evolutions.'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkevo-shuffle',
+        default=config.rng_pkevo_shuffle,
+        help_enable='Shuffle existing evolutions rather than fully randomizing each evolution independently.',
+        help_disable='Pick every evolution at random.'
+    )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkevo-samestage',
+        default=config.rng_pkevo_samestage,
+        help_enable='Limit randomization so that first stages only evolve into second stages and second stages '
+                    'into third stages. Note that baby Pokémon are considered first stages for the purposes of the '
+                    'randomizer.',
+        help_disable='Allow evolutions to randomize to any other Pokémon. This may lead into strong Pokémon evolving '
+                     'into weak Pokémon and long or circular evolution chains.'
+    )
 
     parser_move_randomization_group = parser.add_argument_group('Move randomization options')
     add_enable_disable_argument(

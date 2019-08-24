@@ -47,3 +47,7 @@ def interpret_game_code(code):
 def chunked(size, source):
     for i in range(0, len(source), size):
         yield source[i:i + size]
+
+
+def flatten(list_of_lists):
+    return [item for sublist in list_of_lists for item in sublist]
