@@ -449,6 +449,13 @@ if __name__ == "__main__":
         help_disable='Keep original Pokémon in Battle CDs. The setups may be winnable depending on other randomization '
                      'options.'
     )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-unique-shadow',
+        default=config.rng_trainers_unique_shadow,
+        help_enable='Ensure that all Shadow Pokémon are unique.',
+        help_disable='Allow duplicate Shadow Pokémon.'
+    )
 
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
 

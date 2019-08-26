@@ -53,6 +53,7 @@ class RandomizerConfig:
             "rng_trainers_cat_bingo": True,
             "rng_trainers_cat_battle_sim": True,
             "rng_trainers_cat_quick_battle": True,
+            "rng_trainers_unique_shadow": True,
             "rng_starters": True,
             "rng_starters_fixed": [],
             "rng_starters_max_bst": 500,

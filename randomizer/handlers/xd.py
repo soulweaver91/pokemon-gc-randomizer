@@ -393,7 +393,7 @@ class XDTrainerDeckDPKM(XDTrainerSection):
             if pokemon.species == PokemonSpecies.NONE:
                 continue
 
-            if i in shadow_indexes:
+            if i in shadow_indexes and config.rng_trainers_unique_shadow:
                 pokemon.species = shadow_candidates.pop()
             else:
                 pokemon.species = random.choice([p.species for p in pokemon_data.values() if 0 < p.natdex_no < 388])
