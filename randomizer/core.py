@@ -61,6 +61,7 @@ class Randomizer:
         self.handler.load_tm_data()
         self.handler.load_move_data()
         self.handler.load_pokemon_data()
+        self.handler.load_trainer_data()
 
         if config.rng_move_types or config.rng_move_pp or config.rng_move_power or config.rng_move_accuracy:
             self.handler.randomize_moves()
@@ -83,10 +84,14 @@ class Randomizer:
         if config.rng_pktm:
             self.handler.randomize_pokemon_tms()
 
+        if config.rng_trainers:
+            self.handler.randomize_trainers()
+
         if config.rng_starters:
             self.handler.randomize_and_write_starter_data()
 
         self.handler.write_pokemon_data()
         self.handler.write_move_data()
         self.handler.write_tm_data()
+        self.handler.write_trainer_data()
         self.handler.write_archives()

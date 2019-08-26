@@ -405,6 +405,14 @@ if __name__ == "__main__":
     )
 
     parser_trainer_randomization_group = parser.add_argument_group('Trainer randomization options')
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers',
+        default=config.rng_trainers,
+        help_enable='Enable randomization of trainers\' Pokémon.',
+        help_disable='Do not randomize trainer Pokémon.'
+    )
+
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
 
     parser_gift_pkmn_randomization_group = parser.add_argument_group('Gift/Starter Pokémon options')

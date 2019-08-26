@@ -555,12 +555,15 @@ class BaseHandler:
             self.dol_file.seek(6, 1)
             self.dol_file.write(pack(">H", m.move.value))
 
+    def load_trainer_data(self):
+        raise AbstractHandlerMethodError()
+
+    def write_trainer_data(self):
+        raise AbstractHandlerMethodError()
+
     def get_available_regular_moves(self):
         return [m for _, m in self.move_data.items() if m.move not in [Move.STRUGGLE, Move.NONE]
                 and m.move.value < Move.UNUSED_0x163.value]
-
-    def get_available_shadow_moves(self):
-        raise AbstractHandlerMethodError()
 
     def randomize_pokemon_get_root_level_list(self, condition):
         return self.get_first_stages() if condition else self.normal_pokemon
@@ -666,6 +669,9 @@ class BaseHandler:
         self.tm_data = random.sample(self.get_available_regular_moves(), 50)
         for i, move in enumerate(self.tm_data):
             logging.debug('  TM%02d now contains %s', i + 1, move.move.name)
+
+    def randomize_trainers(self):
+        raise AbstractHandlerMethodError()
 
     def randomize_and_write_starter_data(self):
         raise AbstractHandlerMethodError()
