@@ -412,6 +412,43 @@ if __name__ == "__main__":
         help_enable='Enable randomization of trainers\' Pokémon.',
         help_disable='Do not randomize trainer Pokémon.'
     )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-cat-story',
+        default=config.rng_trainers_cat_story,
+        help_enable='Randomize story related trainers.',
+        help_disable='Keep original teams for story related trainers.'
+    )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-cat-mt-battle',
+        default=config.rng_trainers_cat_mt_battle,
+        help_enable='Randomize Mt. Battle related trainers.',
+        help_disable='Keep original teams for Mt. Battle related trainers.'
+    )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-cat-quick-battle',
+        default=config.rng_trainers_cat_quick_battle,
+        help_enable='Randomize the Pokémon pools in the Quick Battle mode.',
+        help_disable='Keep original Pokémon in Quick Battle Mode.'
+    )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-cat-bingo',
+        default=config.rng_trainers_cat_bingo,
+        help_enable='Randomize the Pokémon in Battle Bingo. May result in unwinnable bingo cards. (XD only)',
+        help_disable='Keep original Pokémon in Battle Bingo. The bingo cards may be winnable depending on other '
+                     'randomization options.'
+    )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-cat-battle-sim',
+        default=config.rng_trainers_cat_battle_sim,
+        help_enable='Randomize the Pokémon in Battle CDs. May result in unwinnable scenarios. (XD only)',
+        help_disable='Keep original Pokémon in Battle CDs. The setups may be winnable depending on other randomization '
+                     'options.'
+    )
 
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
 

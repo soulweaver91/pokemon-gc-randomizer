@@ -5,6 +5,7 @@ from io import BytesIO
 from struct import unpack, pack
 import logging
 
+from randomizer import config
 from randomizer.constants import IsoRegion
 from randomizer.handlers.base import BasePokemon, BaseMoveEntry
 from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies, Item
@@ -636,11 +637,60 @@ class XDHandler(BaseHandler):
         self.dol_file.write(pack(">H", exp_values[eevee.exp_class]))
 
     def randomize_trainers(self):
+        logging.info('Randomizing trainer data.')
         allowed_shadow_pokemon = [p.species for p in self.normal_pokemon]
         random.shuffle(allowed_shadow_pokemon)
 
-        for deck in self.trainer_decks.values():
-            deck.randomize(self.pokemon_data, self.shadow_pokemon_indexes, allowed_shadow_pokemon)
+        decks_to_randomize = {
+            b'DeckData_Story.bin': config.rng_trainers_cat_story,
+            b'DeckData_Bingo.bin': config.rng_trainers_cat_bingo,
+            b'DeckData_Colosseum.bin': config.rng_trainers_cat_story,
+            b'DeckData_DarkPokemon.bin': config.rng_trainers_cat_story,
+            b'DeckData_Hundred.bin': config.rng_trainers_cat_mt_battle,
+            b'DeckData_Imasugu.bin': config.rng_trainers_cat_quick_battle,
+            b'DeckData_Virtual.bin': config.rng_trainers_cat_battle_sim
+        }
+
+        story_dpkm = None
+        try:
+            story_deck = self.trainer_decks[b'DeckData_Story.bin']
+            for story_deck_section in story_deck.sections:
+                if story_deck_section.section_type == b'DPKM':
+                    story_dpkm = story_deck_section
+                    break
+        except KeyError:
+            # Well, this is awkward. Though this is only used for displaying the Pokémon name for shadow Pokémon.
+            # If we go here, there is probably a bug somewhere already or the ISO is broken.
+            pass
+
+        for deck_name, deck in self.trainer_decks.items():
+            if decks_to_randomize[deck_name]:
+                logging.debug('Randomizing deck %s.' % deck_name.decode('ascii', errors='replace'))
+                deck.randomize(self.pokemon_data, self.shadow_pokemon_indexes, allowed_shadow_pokemon)
+
+                for section in deck.sections:
+                    if section.section_type == b'DPKM':
+                        for i, pokemon in enumerate(section.entries):
+                            if pokemon.species != PokemonSpecies.NONE:
+                                logging.debug('    #%d: Lv%d %s with %s' % (
+                                    i, pokemon.level, pokemon.species.name,
+                                    '/'.join([m.name for m in pokemon.moves if m != Move.NONE])))
+                            else:
+                                logging.debug('    #%d: Blank entry' % i)
+
+                    elif section.section_type == b'DDPK':
+                        for i, pokemon in enumerate(section.entries):
+                            if pokemon.dpkm_index != 0:
+                                self.shadow_pokemon_indexes.append(pokemon.dpkm_index)
+
+                                species_name = ('???' if story_dpkm is None
+                                                else story_dpkm.entries[pokemon.dpkm_index].species.name)
+
+                                logging.debug('    #%d: Lv%d Shadow %s (story deck #%d) with %s' % (
+                                    i, pokemon.level, species_name, pokemon.dpkm_index,
+                                    '/'.join([m.name for m in pokemon.move_overrides if m != Move.NONE])))
+                            else:
+                                logging.debug('    #%d: Blank entry' % i)
 
     @property
     def archive_list(self):
