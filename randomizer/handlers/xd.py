@@ -389,14 +389,45 @@ class XDTrainerDeckDPKM(XDTrainerSection):
         return data
 
     def randomize(self, pokemon_data, shadow_indexes, shadow_candidates):
+        bsts = [p.base_stats.total for p in pokemon_data.values()]
+        bst_min = min(bsts)
+        bst_max = max(bsts)
+
         for i, pokemon in enumerate(self.entries):
             if pokemon.species == PokemonSpecies.NONE:
                 continue
 
+            level_bst_min = 0
+            level_bst_max = 5000
+            if config.rng_trainers_power_progression:
+                level_bst_min = min(bst_max - 100, max(bst_min,
+                                                       bst_min + (pokemon.level - 10) / 65 * (bst_max - bst_min)))
+                level_bst_max = min(bst_max, max(bst_min,
+                                                 bst_min + (pokemon.level + 30) / 80 * (bst_max - bst_min)))
+
             if i in shadow_indexes and config.rng_trainers_unique_shadow:
-                pokemon.species = shadow_candidates.pop()
+                current_bst = 0
+                attempts = 0
+                # Go through the whole list once. If there are no suitable BST Pokémon,
+                # just pick the first one in the queue.
+                while (level_bst_min > current_bst or level_bst_max < current_bst) \
+                        and attempts < len(shadow_candidates):
+                    attempts += 1
+
+                    pokemon.species = shadow_candidates.pop()
+                    current_bst = pokemon_data[pokemon.species.value].base_stats.total
+
+                    if level_bst_min > current_bst or level_bst_max < current_bst:
+                        shadow_candidates.insert(0, pokemon.species)
             else:
-                pokemon.species = random.choice([p.species for p in pokemon_data.values() if 0 < p.natdex_no < 388])
+                available_pokemon = [p.species for p in pokemon_data.values() if 0 < p.natdex_no < 388
+                                     and level_bst_min <= p.base_stats.total <= level_bst_max]
+
+                if len(available_pokemon) == 0:
+                    # Only happens if the BSTs have a huge gap somewhere. In that case, just pick randomly.
+                    available_pokemon = [p.species for p in pokemon_data.values() if 0 < p.natdex_no < 388]
+
+                pokemon.species = random.choice(available_pokemon)
 
             # todo: moves, restrictions, etc.
 

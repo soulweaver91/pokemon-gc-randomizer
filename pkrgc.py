@@ -456,6 +456,14 @@ if __name__ == "__main__":
         help_enable='Ensure that all Shadow Pokémon are unique.',
         help_disable='Allow duplicate Shadow Pokémon.'
     )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-power-progression',
+        default=config.rng_trainers_power_progression,
+        help_enable='The average base stat total of Pokémon in trainers\' teams rises by the Pokémon level, leading to '
+                    'natural power progression where early game trainers are weak and late game trainers are strong.',
+        help_disable='Don\'t restrict Pokémon based on their power.'
+    )
 
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
 
