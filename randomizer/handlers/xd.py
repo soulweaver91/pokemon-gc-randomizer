@@ -650,6 +650,13 @@ class XDHandler(BaseHandler):
             if self.region == IsoRegion.EUR:
                 self.archives[b'deck_archive.fsys'].get_file(deck_name.replace(b'.bin', b'_EU.bin')).data = new_data
 
+            if deck_name == b'DeckData_DarkPokemon.bin':
+                # Also overwrite Shadow Pokémon deck copies in common_rel.fsys
+                self.archives[b'common.fsys'].get_file(deck_name).data = new_data
+
+                if self.region == IsoRegion.EUR:
+                    self.archives[b'common.fsys'].get_file(deck_name.replace(b'.bin', b'_EU.bin')).data = new_data
+
     def make_pokemon_data(self, io_in, idx):
         return XDPokemon(io_in.read(0x124), idx)
 
@@ -708,6 +715,7 @@ class XDHandler(BaseHandler):
             # If we go here, there is probably a bug somewhere already or the ISO is broken.
             pass
 
+        shadow_pokemon_dex_nos = []
         for deck_name, deck in self.trainer_decks.items():
             if decks_to_randomize[deck_name]:
                 logging.debug('Randomizing deck %s.' % deck_name.decode('ascii', errors='replace'))
@@ -736,6 +744,17 @@ class XDHandler(BaseHandler):
                                     '/'.join([m.name for m in pokemon.move_overrides if m != Move.NONE])))
                             else:
                                 logging.debug('    #%d: Blank entry' % i)
+
+                        shadow_pokemon_dex_nos = [story_dpkm.entries[p.dpkm_index].species.value
+                                                  for p in section.entries]
+
+        # Write the Shadow Pokémon list into the DOL file.
+        # In this address, there is obviously a list of all the Shadow Pokémon available.
+        # It's not exactly clear at this point whether it's this list or the Shadow Pokémon deck copy in common.fsys
+        # that is used to initialize the Shadow Monitor data into the save file, but it shouldn't hurt to write them
+        # here in either case.
+        self.dol_file.seek(self.shadow_monitor_data_offset)
+        self.dol_file.write(b''.join([pack('>H', i) for i in shadow_pokemon_dex_nos]))
 
     @property
     def archive_list(self):
@@ -793,3 +812,16 @@ class XDHandler(BaseHandler):
             raise NotImplementedError
         else:
             raise NotImplementedError
+
+    # in start.dol
+    @property
+    def shadow_monitor_data_offset(self):
+        if self.region == IsoRegion.USA:
+            return 0x004014E8
+        elif self.region == IsoRegion.EUR:
+            return 0x0043BDC8
+        elif self.region == IsoRegion.JPN:
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
