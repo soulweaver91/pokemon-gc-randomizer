@@ -458,6 +458,7 @@ class XDTrainerDeckDPKM(XDTrainerSection):
 
 class XDTrainerDeckDDPK(XDTrainerSection):
     SHADOW_MOVES = [Move(m) for m in range(Move.SHADOW_BLITZ.value, Move.SHADOW_HALF.value)]
+    DAMAGING_SHADOW_MOVES = [Move(m) for m in range(Move.SHADOW_BLITZ.value, Move.SHADOW_BLAST.value)]
 
     class Pokemon:
         SIGNATURE = '>BBBBHHHHHHHHI'
@@ -526,8 +527,10 @@ class XDTrainerDeckDDPK(XDTrainerSection):
             if pokemon.dpkm_index == 0:
                 continue
 
-            shadow_move_count = random.randint(1, 4)
-            moves = random.sample(self.SHADOW_MOVES, shadow_move_count) + [Move.NONE] * (4 - shadow_move_count)
+            first_move = random.choice(self.DAMAGING_SHADOW_MOVES)
+            extra_shadow_move_count = random.randint(0, 3)
+            moves = [first_move] + random.sample([m for m in self.SHADOW_MOVES if m != first_move],
+                                                 extra_shadow_move_count) + [Move.NONE] * (3 - extra_shadow_move_count)
             pokemon.move_overrides = moves
 
     @property
