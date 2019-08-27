@@ -464,6 +464,13 @@ if __name__ == "__main__":
                     'natural power progression where early game trainers are weak and late game trainers are strong.',
         help_disable='Don\'t restrict Pokémon based on their power.'
     )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-level-up-only',
+        default=config.rng_trainers_level_up_only,
+        help_enable='Trainers\' Pokémon only use the last four level-up moves based on the current level.',
+        help_disable='Trainers\' Pokémon can have any level-up or TM moves up to the current level.'
+    )
 
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
 

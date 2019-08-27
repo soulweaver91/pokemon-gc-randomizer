@@ -429,7 +429,21 @@ class XDTrainerDeckDPKM(XDTrainerSection):
 
                 pokemon.species = random.choice(available_pokemon)
 
-            # todo: moves, restrictions, etc.
+            level_up_moves, tm_moves = pokemon_data[pokemon.species.value].get_legal_moves_at_level(pokemon.level)
+
+            if config.rng_trainers_level_up_only:
+                pokemon.moves = level_up_moves[-4:]
+            else:
+                if len(level_up_moves) + len(tm_moves) < 4:
+                    pokemon.moves = level_up_moves + list(tm_moves)
+                else:
+                    moves = set()
+                    while len(moves) < 4:
+                        moves = moves.union(set(random.sample(list(tm_moves) + level_up_moves * 4, 4)))
+
+                    pokemon.moves = list(moves)[0:4]
+
+            pokemon.moves = pokemon.moves + [Move.NONE] * max(0, 4 - len(pokemon.moves))
 
         return shadow_candidates
 

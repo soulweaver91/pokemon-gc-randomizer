@@ -55,6 +55,7 @@ class RandomizerConfig:
             "rng_trainers_cat_quick_battle": True,
             "rng_trainers_unique_shadow": True,
             "rng_trainers_power_progression": True,
+            "rng_trainers_level_up_only": False,
             "rng_starters": True,
             "rng_starters_fixed": [],
             "rng_starters_max_bst": 500,

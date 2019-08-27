@@ -49,6 +49,8 @@ class BasePokemon:
         self.evolution = []
         self.level_up_moves = []
 
+        self.tm_moves_set = ()
+
     def __str__(self):
         return "#%03d %s, %s/%s" % (self.natdex_no, self.species.name, self.type1.name, self.type2.name)
 
@@ -326,12 +328,20 @@ class BasePokemon:
         logging.debug('%s now learns the following TM moves: %s', self.species.name,
                       ', '.join([tm_data[i].move.name for i, l in enumerate(self.tm_compatibility) if l is True]))
 
+        self.update_tm_move_set(tm_data)
+
         return self.tm_compatibility
+
+    def update_tm_move_set(self, tm_data):
+        self.tm_moves_set = set([tm_data[i].move for i, l in enumerate(self.tm_compatibility) if l is True])
 
     def patch_evolution(self, index, evo_type, level_or_item):
         self.evolution[index].type = evo_type
         self.evolution[index].level = level_or_item.value if type(level_or_item) == Item else level_or_item
         self.evolution[index].item = Item(level_or_item)
+
+    def get_legal_moves_at_level(self, level):
+        return [m.move for m in self.level_up_moves if m.level <= level], self.tm_moves_set
 
     def encode(self):
         raise AbstractHandlerMethodError()
@@ -449,6 +459,7 @@ class BaseHandler:
             for i in range(1, self.POKEMON_DATA_LIST_LENGTH + 1):
                 logging.debug('Reading index %d of %d...', i, self.POKEMON_DATA_LIST_LENGTH)
                 pkmn = self.pokemon_data[i] = self.make_pokemon_data(common_rel, i)
+                pkmn.update_tm_move_set(self.tm_data)
 
                 logging.debug(
                     '  #%d %s, %s%s%s, %d/%d/%d/%d/%d/%d (BST %d), %s%s%s',
@@ -471,7 +482,7 @@ class BaseHandler:
                 logging.debug('  Learnset: %s', ', '.join([
                     '%s (%d)' % (m.move.name, m.level) for m in pkmn.level_up_moves]))
                 logging.debug('  TMs: %s',
-                              ', '.join(['TM%02d %s' % (n + 1, self.tm_data[n].name)
+                              ', '.join(['TM%02d %s' % (n + 1, self.tm_data[n].move.name)
                                         for n, b in enumerate(pkmn.tm_compatibility) if b is True]))
                 logging.debug('  HMs (not available): %s',
                               ', '.join(['HM%02d' % (n + 1)
@@ -524,9 +535,9 @@ class BaseHandler:
         self.dol_file.seek(self.tm_data_offset)
         for i in range(0, 50):
             self.dol_file.seek(6, 1)
-            move = Move(unpack(">H", self.dol_file.read(2))[0])
+            move = self.move_data[unpack(">H", self.dol_file.read(2))[0]]
             self.tm_data.append(move)
-            logging.debug('  TM%02d contains %s', i + 1, move.name)
+            logging.debug('  TM%02d contains %s', i + 1, move.move.name)
 
     def write_pokemon_data(self):
         logging.debug('Encoding Pokémon data in preparation to be written to the ISO.')

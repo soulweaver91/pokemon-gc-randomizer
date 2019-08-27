@@ -58,8 +58,8 @@ class Randomizer:
 
         self.handler.open_archives()
 
-        self.handler.load_tm_data()
         self.handler.load_move_data()
+        self.handler.load_tm_data()
         self.handler.load_pokemon_data()
         self.handler.load_trainer_data()
 
