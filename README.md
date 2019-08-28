@@ -1,4 +1,4 @@
-# Pokémon Colosseum and XD Randomizer
+# Pokémon GameCube Randomizer
 
 This tool randomizes Pokémon XD: Gale of Darkness ISOs, providing a fresh gameplay
 experience with different trainer battles, Pokémon specifics and item placements
