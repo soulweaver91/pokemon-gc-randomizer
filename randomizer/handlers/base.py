@@ -9,7 +9,7 @@ import random
 from struct import unpack, pack
 
 from randomizer import config
-from randomizer.constants import BANNER_META_SIZE, BANNER_META_FIRST_OFFSET
+from randomizer.constants import BANNER_META_SIZE, BANNER_META_FIRST_OFFSET, IsoRegion
 from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies, VALID_POKEMON_TYPES, Item
 from randomizer.iso.fsys import FsysArchive
 from randomizer.iso.structs import StatSet, EvoEntry, LevelUpMoveEntry
@@ -884,8 +884,15 @@ class BaseHandler:
         banner.seek(BANNER_META_FIRST_OFFSET)
         start_pos = BANNER_META_FIRST_OFFSET
 
-        date_str = datetime.now().replace(microsecond=0).isoformat(' ').encode('ascii', errors='ignore')
         text = text[0:32]
+
+        template = b'Randomized at %s\x0awith Pok\xe9mon GameCube Randomizer v%s'
+        date_str = datetime.now().replace(microsecond=0).isoformat(' ').encode('ascii', errors='ignore')
+        template_params = (date_str, PROG_VERSION.encode('ascii', errors='ignore'))
+
+        if self.region == IsoRegion.JPN:
+            template = "ポケモンゲームキューブランダマイザーv%sで\x0a%sにランダム化しました".encode('shift-jis')
+            template_params = (template_params[1], template_params[0])
 
         for i in range(banner_meta_count):
             banner.seek(start_pos)
@@ -899,9 +906,7 @@ class BaseHandler:
             banner.seek(start_pos + 0xC0)
             banner.write(b'\x00' * 0x80)
             banner.seek(start_pos + 0xC0)
-            banner.write(b'Randomized at %s\x0awith Pok\xe9mon GameCube Randomizer v%s' % (
-                date_str, PROG_VERSION.encode('ascii', errors='ignore')
-            ))
+            banner.write(template % template_params)
 
             start_pos += BANNER_META_SIZE
 

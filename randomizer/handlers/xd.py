@@ -805,8 +805,10 @@ class XDHandler(BaseHandler):
         self.dol_file.write(b''.join([pack('>H', i) for i in shadow_pokemon_dex_nos]))
 
     def update_banner(self):
-        self.write_rom_header_name(b'XD Randomizer')
-        self.write_banner_name(b'XD Randomizer')
+        name = 'XDランダマイザー'.encode('shift-jis') if self.region == IsoRegion.JPN else b'XD Randomizer'
+
+        self.write_rom_header_name(name)
+        self.write_banner_name(name)
 
     @property
     def archive_list(self):

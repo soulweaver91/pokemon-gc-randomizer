@@ -7,7 +7,7 @@ import os
 from contrib.gciso import gciso
 from . import util, config
 from .handlers import XDHandler
-from .constants import IsoGame
+from .constants import IsoGame, IsoRegion
 
 
 class Randomizer:
@@ -17,11 +17,12 @@ class Randomizer:
         logging.debug('Trying to load ISO: %s', rom_path)
         try:
             iso = gciso.IsoFile(rom_path)
-            logging.debug('ISO loaded.')
-            logging.debug('Game code: %s', iso.gameCode.decode('ascii'))
-            logging.debug('Internal game name: %s', iso.gameName.decode('ascii'))
-
             game, region = util.interpret_game_code(iso.gameCode)
+            encoding = 'shift-jis' if region == IsoRegion.JPN else 'ascii'
+
+            logging.debug('ISO loaded.')
+            logging.debug('Game code: %s', iso.gameCode.decode(encoding))
+            logging.debug('Internal game name: %s', iso.gameName.decode(encoding))
 
             if game is None:
                 raise NotImplementedError(
