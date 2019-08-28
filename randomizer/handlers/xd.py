@@ -773,7 +773,7 @@ class XDHandler(BaseHandler):
         elif self.region == IsoRegion.EUR:
             return 0x0002BE8C
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return 0x00028C80
         else:
             raise NotImplementedError
 
@@ -784,7 +784,7 @@ class XDHandler(BaseHandler):
         elif self.region == IsoRegion.EUR:
             return 0x000A75C4
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return 0x0005BAB4
         else:
             raise NotImplementedError
 
@@ -795,7 +795,7 @@ class XDHandler(BaseHandler):
         elif self.region == IsoRegion.EUR:
             return 0x0043CC80
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return 0x003DFA60
         else:
             raise NotImplementedError
 
@@ -812,7 +812,10 @@ class XDHandler(BaseHandler):
                 None
             ]
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return [
+                0x001C6AF6,
+                None
+            ]
         else:
             raise NotImplementedError
 
@@ -824,7 +827,7 @@ class XDHandler(BaseHandler):
         elif self.region == IsoRegion.EUR:
             return 0x0043BDC8
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return 0x003DEBA8
         else:
             raise NotImplementedError
 
