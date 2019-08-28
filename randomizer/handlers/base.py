@@ -397,6 +397,43 @@ class BaseMoveEntry:
             self.pp = random.randint(1, 8) * 5
 
 
+class BaseItemBox:
+    def __init__(self):
+        self.quantity = None
+        self.type = None
+        self.item = None
+
+    @property
+    def type_text(self):
+        if self.type == 0x24:
+            return 'box'
+        elif self.type == 0x44:
+            return 'sparkle'
+        else:
+            return 'unknown'
+
+    def randomize(self, allowed_items, berry_reroll_count, random_qty, item_pool):
+        # Don't ever randomize key items
+        if self.item not in allowed_items:
+            return
+
+        if item_pool is not None:
+            item_entry = item_pool.pop()
+            self.item = item_entry[0]
+            self.quantity = item_entry[1]
+        else:
+            for i in range(berry_reroll_count):
+                self.item = random.choice(allowed_items)
+                if self.item.value < Item.CHERI_BERRY.value or self.item.value > Item.STARF_BERRY.value:
+                    break
+
+        if random_qty:
+            self.quantity = 16 - round(math.pow(random.randint(1, 65536), 1/4))
+
+    def encode(self):
+        raise AbstractHandlerMethodError()
+
+
 class BaseHandler:
     iso = None
     region = None
@@ -406,11 +443,13 @@ class BaseHandler:
     archives = dict()
     pokemon_data = dict()
     move_data = dict()
+    item_box_data = dict()
     tm_data = []
 
     # these should be filled in in the derived handlers
     POKEMON_DATA_LIST_LENGTH = 0
     MOVE_DATA_LIST_LENGTH = 0
+    ITEM_BOX_LIST_LENGTH = 0
 
     def __init__(self, iso, region):
         self.iso = iso
@@ -575,9 +614,43 @@ class BaseHandler:
     def write_trainer_data(self):
         raise AbstractHandlerMethodError()
 
+    def load_item_box_data(self):
+        logging.info('Reading item box data from the archive file.')
+        try:
+            common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+            common_rel.seek(self.item_data_offset)
+
+            for i in range(1, self.ITEM_BOX_LIST_LENGTH + 1):
+                item_box = self.item_box_data[i] = self.make_item_box_data(common_rel, i)
+
+                logging.debug(
+                    '  #%d %d x %s (%s)',
+                    i,
+                    item_box.quantity,
+                    item_box.item.name,
+                    item_box.type_text
+                )
+
+        except KeyError as e:
+            logging.error('Couldn\'t read item box data since the required data file was not loaded.')
+            raise e
+
+    def write_item_box_data(self):
+        logging.debug('Encoding item box data in preparation to be written to the ISO.')
+
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        common_rel.seek(self.item_data_offset)
+
+        for i, item in self.item_box_data.items():
+            logging.debug('Encoding index %d of %d...', i, self.ITEM_BOX_LIST_LENGTH)
+            common_rel.write(item.encode())
+
     def get_available_regular_moves(self):
         return [m for _, m in self.move_data.items() if m.move not in [Move.STRUGGLE, Move.NONE]
                 and m.move.value < Move.UNUSED_0x163.value]
+
+    def get_game_specific_randomizable_items(self):
+        return []
 
     def randomize_pokemon_get_root_level_list(self, condition):
         return self.get_first_stages() if condition else self.normal_pokemon
@@ -689,6 +762,29 @@ class BaseHandler:
     def randomize_trainers(self):
         raise AbstractHandlerMethodError()
 
+    def randomize_item_boxes(self):
+        logging.info('Randomizing item boxes.')
+
+        allowed_items = [i for i in Item if Item.NONE.value < i.value <= Item.TM50.value] \
+                        + self.get_game_specific_randomizable_items()
+
+        original_items = None
+        if config.rng_items_shuffle:
+            original_items = [(box.item, box.quantity) for i, box in self.item_box_data.items()
+                              if box.item in allowed_items]
+            random.shuffle(original_items)
+
+        for i, item_box in self.item_box_data.items():
+            item_box.randomize(allowed_items, config.rng_items_berry_reroll,
+                               config.rng_items_random_qty, original_items)
+            logging.debug(
+                '  Item %s #%d now contains %d x %s',
+                item_box.type_text,
+                i,
+                item_box.quantity,
+                item_box.item.name
+            )
+
     def randomize_and_write_starter_data(self):
         raise AbstractHandlerMethodError()
 
@@ -723,6 +819,9 @@ class BaseHandler:
     def make_move_data(self, io_in, idx) -> BaseMoveEntry:
         raise AbstractHandlerMethodError()
 
+    def make_item_box_data(self, io_in, idx) -> BaseItemBox:
+        raise AbstractHandlerMethodError()
+
     @property
     def archive_list(self):
         raise AbstractHandlerMethodError()
@@ -735,6 +834,11 @@ class BaseHandler:
     # in common.fsys/common_rel
     @property
     def move_data_offset(self):
+        raise AbstractHandlerMethodError()
+
+    # in common.fsys/common_rel
+    @property
+    def item_data_offset(self):
         raise AbstractHandlerMethodError()
 
     # in start.dol
@@ -809,5 +913,3 @@ class BaseHandler:
 
     def update_banner(self):
         pass
-
-

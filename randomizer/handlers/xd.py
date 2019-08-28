@@ -7,7 +7,7 @@ import logging
 
 from randomizer import config
 from randomizer.constants import IsoRegion
-from randomizer.handlers.base import BasePokemon, BaseMoveEntry
+from randomizer.handlers.base import BasePokemon, BaseMoveEntry, BaseItemBox
 from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies, Item
 from . import BaseHandler
 
@@ -572,9 +572,48 @@ class XDTrainerDeckDSTR(XDTrainerSection):
         return 'Trainer string data'
 
 
+class XDItemBox(BaseItemBox):
+
+    SIGNATURE = '>BBhHH6sHfff'
+
+    def __init__(self, data, idx):
+        super().__init__()
+
+        (
+            self.type,
+            self.quantity,
+            self.angle,
+            self.room_id,
+            self.flags,
+            self.unknown_0x08_0x0D,
+            item_id,
+            self.coord_x,
+            self.coord_y,
+            self.coord_z
+
+        ) = unpack(self.SIGNATURE, data)
+
+        self.item = Item(item_id)
+
+    def encode(self):
+        return pack(
+            self.SIGNATURE,
+            self.type,
+            self.quantity,
+            self.angle,
+            self.room_id,
+            self.flags,
+            self.unknown_0x08_0x0D,
+            self.item.value,
+            self.coord_x,
+            self.coord_y,
+            self.coord_z)
+
+
 class XDHandler(BaseHandler):
     POKEMON_DATA_LIST_LENGTH = 414
     MOVE_DATA_LIST_LENGTH = 373
+    ITEM_BOX_LIST_LENGTH = 114
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -665,6 +704,12 @@ class XDHandler(BaseHandler):
 
     def make_move_data(self, io_in, idx):
         return XDMoveEntry(io_in.read(0x38), idx)
+
+    def make_item_box_data(self, io_in, idx):
+        return XDItemBox(io_in.read(0x1C), idx)
+
+    def get_game_specific_randomizable_items(self):
+        return [Item.JOY_SCENT_XD, Item.VIVID_SCENT_XD, Item.EXCITE_SCENT_XD, Item.SUN_SHARD, Item.MOON_SHARD]
 
     def randomize_and_write_starter_data(self):
         exp_values = {
@@ -800,6 +845,17 @@ class XDHandler(BaseHandler):
             return 0x0043CC80
         elif self.region == IsoRegion.JPN:
             return 0x003DFA60
+        else:
+            raise NotImplementedError
+
+    @property
+    def item_data_offset(self):
+        if self.region == IsoRegion.USA:
+            return 0x0001EDAC
+        elif self.region == IsoRegion.EUR:
+            return 0x00020D6C
+        elif self.region == IsoRegion.JPN:
+            return 0x0001DB60
         else:
             raise NotImplementedError
 

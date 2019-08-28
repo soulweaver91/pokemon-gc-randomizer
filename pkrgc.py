@@ -473,6 +473,36 @@ if __name__ == "__main__":
     )
 
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')
+    add_enable_disable_argument(
+        parser_item_randomization_group,
+        'rng-items',
+        default=config.rng_items,
+        help_enable='Enable randomization of items lying around in Orre.',
+        help_disable='Do not randomize item boxes.'
+    )
+    add_enable_disable_argument(
+        parser_item_randomization_group,
+        'rng-items-shuffle',
+        default=config.rng_items_shuffle,
+        help_enable='Redistribute the existing items into the different boxes.',
+        help_disable='Randomize each item individually.'
+    )
+    parser_item_randomization_group.add_argument(
+        '--rng-items-berry-reroll',
+        action='store',
+        default=config.rng_items_berry_reroll,
+        type=int,
+        metavar='NUM',
+        help='Reroll the random item this many times if the result was a berry. Has no effect if --rng-items-shuffle '
+             'is enabled. (Default: 1)'
+    )
+    add_enable_disable_argument(
+        parser_item_randomization_group,
+        'rng-items-random-qty',
+        default=config.rng_items_random_qty,
+        help_enable='Randomize the quantities of items.',
+        help_disable='Keep original quantities.'
+    )
 
     parser_gift_pkmn_randomization_group = parser.add_argument_group('Gift/Starter Pokémon options')
     add_enable_disable_argument(
