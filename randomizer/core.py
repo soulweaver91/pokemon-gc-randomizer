@@ -95,3 +95,4 @@ class Randomizer:
         self.handler.write_tm_data()
         self.handler.write_trainer_data()
         self.handler.write_archives()
+        self.handler.update_banner()

@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+from datetime import datetime
 import logging
+import math
+import os
 import random
 from struct import unpack, pack
 
-import os
-
 from randomizer import config
+from randomizer.constants import BANNER_META_SIZE, BANNER_META_FIRST_OFFSET
 from randomizer.iso.constants import Ability, Move, Type, EvolutionType, PokemonSpecies, VALID_POKEMON_TYPES, Item
 from randomizer.iso.fsys import FsysArchive
 from randomizer.iso.structs import StatSet, EvoEntry, LevelUpMoveEntry
@@ -767,5 +770,44 @@ class BaseHandler:
             min_bst = min([p.base_stats.total for p in self.normal_pokemon if p.base_stats.total > 0])
             max_bst = max(min_bst, config.rng_starters_max_bst)
             return random.choice([p for p in self.normal_pokemon if p.base_stats.total <= max_bst])
+
+    def write_banner_name(self, text):
+        from randomizer import PROG_VERSION
+
+        banner = self.iso.open(b'opening.bnr')
+        banner_meta_count = int(math.floor((banner.size - BANNER_META_FIRST_OFFSET) / BANNER_META_SIZE))
+
+        banner.seek(BANNER_META_FIRST_OFFSET)
+        start_pos = BANNER_META_FIRST_OFFSET
+
+        date_str = datetime.now().replace(microsecond=0).isoformat(' ').encode('ascii', errors='ignore')
+        text = text[0:32]
+
+        for i in range(banner_meta_count):
+            banner.seek(start_pos)
+            banner.write(b'\x00' * 0x20)
+            banner.seek(start_pos)
+            banner.write(text)
+            banner.seek(start_pos + 0x40)
+            banner.write(b'\x00' * 0x40)
+            banner.seek(start_pos + 0x40)
+            banner.write(text)
+            banner.seek(start_pos + 0xC0)
+            banner.write(b'\x00' * 0x80)
+            banner.seek(start_pos + 0xC0)
+            banner.write(b'Randomized at %s\x0awith Pok\xe9mon GameCube Randomizer v%s' % (
+                date_str, PROG_VERSION.encode('ascii', errors='ignore')
+            ))
+
+            start_pos += BANNER_META_SIZE
+
+    def write_rom_header_name(self, text):
+        self.iso.file.seek(0x20)
+        self.iso.file.write(b'\x00' * 32)
+        self.iso.file.seek(0x20)
+        self.iso.file.write(text[0:32])
+
+    def update_banner(self):
+        pass
 
 

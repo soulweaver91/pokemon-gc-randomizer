@@ -759,6 +759,10 @@ class XDHandler(BaseHandler):
         self.dol_file.seek(self.shadow_monitor_data_offset)
         self.dol_file.write(b''.join([pack('>H', i) for i in shadow_pokemon_dex_nos]))
 
+    def update_banner(self):
+        self.write_rom_header_name(b'XD Randomizer')
+        self.write_banner_name(b'XD Randomizer')
+
     @property
     def archive_list(self):
         return [

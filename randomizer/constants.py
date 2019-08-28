@@ -13,3 +13,7 @@ class IsoRegion(Enum):
     JPN = 'Japan'
     USA = 'USA'
     EUR = 'Europe'
+
+
+BANNER_META_SIZE = 0x140
+BANNER_META_FIRST_OFFSET = 0x1820
