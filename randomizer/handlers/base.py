@@ -580,7 +580,7 @@ class BaseHandler:
         return self.get_first_stages() if condition else self.normal_pokemon
 
     def randomize_pokemon_aspect_recur(self, aspect, result_arg_name, pkmn_list, recurse,
-                                       previous_result=None, pass_index=False, **kwargs):
+                                       previous_result=None, pass_index=False, already_done=set(), **kwargs):
         for i, pkmn in enumerate(pkmn_list):
             args = {
                 result_arg_name:  previous_result
@@ -591,11 +591,13 @@ class BaseHandler:
             randomization_result = getattr(pkmn, 'randomize_' + aspect)(**args, **kwargs)
             if recurse:
                 evolution_targets = [self.pokemon_data[evo.evolves_to.value] for evo in pkmn.evolution
-                                     if evo.evolves_to is not PokemonSpecies.NONE]
+                                     if evo.evolves_to is not PokemonSpecies.NONE
+                                     and self.pokemon_data[evo.evolves_to.value].species not in already_done]
 
-                self.randomize_pokemon_aspect_recur(aspect, result_arg_name, evolution_targets,
-                                                    previous_result=randomization_result, recurse=True,
-                                                    pass_index=pass_index, **kwargs)
+                self.randomize_pokemon_aspect_recur(
+                    aspect, result_arg_name, evolution_targets,
+                    previous_result=randomization_result, recurse=True, pass_index=pass_index,
+                    already_done=already_done.union(set([p.species for p in pkmn_list])), **kwargs)
 
     def randomize_pokemon_stats(self):
         logging.info('Randomizing Pokémon stats.')
