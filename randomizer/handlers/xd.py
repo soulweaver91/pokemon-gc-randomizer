@@ -7,8 +7,9 @@ import logging
 
 from randomizer import config
 from randomizer.constants import IsoRegion
-from randomizer.handlers.base import BasePokemon, BaseMoveEntry, BaseItemBox
+from randomizer.handlers.base import BasePokemon, BaseMoveEntry, BaseItemBox, get_bst_range_for_level
 from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies, Item
+from randomizer.util import chunked
 from . import BaseHandler
 
 
@@ -400,10 +401,7 @@ class XDTrainerDeckDPKM(XDTrainerSection):
             level_bst_min = 0
             level_bst_max = 5000
             if config.rng_trainers_power_progression:
-                level_bst_min = min(bst_max - 100, max(bst_min,
-                                                       bst_min + (pokemon.level - 10) / 65 * (bst_max - bst_min)))
-                level_bst_max = min(bst_max, max(bst_min,
-                                                 bst_min + (pokemon.level + 30) / 80 * (bst_max - bst_min)))
+                level_bst_min, level_bst_max = get_bst_range_for_level(pokemon.level, bst_min, bst_max)
 
             if i in shadow_indexes and config.rng_trainers_unique_shadow:
                 current_bst = 0
@@ -610,14 +608,113 @@ class XDItemBox(BaseItemBox):
             self.coord_z)
 
 
+class XDBattleBingoCard:
+    class PokemonData:
+        SIGNATURE = '>BBBBHHH'
+
+        def __init__(self, data):
+            (
+                self.useSecondType,
+                self.useSecondAbility,
+                self.nature,
+                self.gender,
+                species,
+                move,
+                self.unknown_0x08_0x09
+            ) = unpack(self.SIGNATURE, data)
+
+            self.species = PokemonSpecies(species)
+            self.move = Move(move)
+
+        def encode(self):
+            return pack(
+                self.SIGNATURE,
+                self.useSecondType,
+                self.useSecondAbility,
+                self.nature,
+                self.gender,
+                self.species.value,
+                self.move.value,
+                self.unknown_0x08_0x09)
+
+    SIGNATURE = '>BBBBBBBBIIB20s140s6sB'
+
+    def __init__(self, data, idx):
+        (
+            self.index,
+            self.difficulty,
+            self.subindex,
+            self.unknown_0x03,
+            self.level,
+            self.unknown_0x05,
+            self.pokemon_count,
+            self.mystery_count,
+            self.name_pointer,
+            self.details_pointer,
+            self.unknown_0x10,
+            rewards,
+            pokemon_data,
+            mystery_panels,
+            self.unknown_0xb7
+        ) = unpack(self.SIGNATURE, data)
+
+        self.rewards = [unpack('>H', s)[0] for s in chunked(2, rewards)]
+        self.pokemon_data = [XDBattleBingoCard.PokemonData(s) for s in chunked(10, pokemon_data)]
+        self.mystery_panels = [unpack('>BB', s) for s in chunked(2, mystery_panels)]
+
+    def encode(self):
+        return pack(
+            self.SIGNATURE,
+            self.index,
+            self.difficulty,
+            self.subindex,
+            self.unknown_0x03,
+            self.level,
+            self.unknown_0x05,
+            self.pokemon_count,
+            self.mystery_count,
+            self.name_pointer,
+            self.details_pointer,
+            self.unknown_0x10,
+            b''.join([pack('>H', s) for s in self.rewards]),
+            b''.join(p.encode() for p in self.pokemon_data),
+            b''.join([pack('>BB', *s) for s in self.mystery_panels]),
+            self.unknown_0xb7)
+
+    def randomize(self, pokemon_data, move_data):
+        bsts = [p.base_stats.total for p in pokemon_data.values()]
+        bst_min = min(bsts)
+        bst_max = max(bsts)
+
+        level_bst_min = 0
+        level_bst_max = 5000
+        if config.rng_trainers_power_progression:
+            level_bst_min, level_bst_max = get_bst_range_for_level(self.level, bst_min, bst_max)
+
+        candidates = [p for p in pokemon_data.values() if level_bst_min <= p.base_stats.total <= level_bst_max]
+        if len(candidates) == 0:
+            candidates = pokemon_data.values()
+
+        for pokemon in self.pokemon_data:
+            candidate = random.choice(candidates)
+
+            pokemon.species = candidate.species
+
+            level_up_moves, tm_moves = candidate.get_legal_moves_at_level(self.level)
+            pokemon.move = random.choice([m for m in level_up_moves * 4 + list(tm_moves)
+                                          if move_data[m.value].power > 0])
+
+
 class XDHandler(BaseHandler):
     POKEMON_DATA_LIST_LENGTH = 414
     MOVE_DATA_LIST_LENGTH = 373
     ITEM_BOX_LIST_LENGTH = 114
+    BINGO_CARD_LIST_LENGTH = 11
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.trainer_decks = {}
+        self.bingo_cards = []
         self.shadow_pokemon_indexes = []
 
     def load_deck(self, deck_name):
@@ -680,6 +777,16 @@ class XDHandler(BaseHandler):
         self.load_deck(b'DeckData_Imasugu.bin')
         self.load_deck(b'DeckData_Virtual.bin')
 
+        # Also load bingo data
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        common_rel.seek(self.bingo_data_offset)
+        logging.debug('Loading Battle Bingo data...')
+        for i in range(self.BINGO_CARD_LIST_LENGTH):
+            card = XDBattleBingoCard(common_rel.read(0xB8), i)
+            self.bingo_cards.append(card)
+            logging.debug('  Card #%d: Lv%d %s' % (i, card.level, ', '.join(
+                ['%s (%s)' % (p.species.name, p.move.name) for p in card.pokemon_data])))
+
     def write_trainer_data(self):
         logging.debug('Encoding trainer data in preparation to be written to the ISO.')
 
@@ -698,6 +805,12 @@ class XDHandler(BaseHandler):
 
                 if self.region == IsoRegion.EUR:
                     self.archives[b'common.fsys'].get_file(deck_name.replace(b'.bin', b'_EU.bin')).data = new_data
+
+        # Also write bingo data
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        common_rel.seek(self.bingo_data_offset)
+        for card in self.bingo_cards:
+            common_rel.write(card.encode())
 
     def make_pokemon_data(self, io_in, idx):
         return XDPokemon(io_in.read(0x124), idx)
@@ -796,6 +909,15 @@ class XDHandler(BaseHandler):
                         shadow_pokemon_dex_nos = [story_dpkm.entries[p.dpkm_index].species.value
                                                   for p in section.entries]
 
+        # Randomize the Battle Bingo cards.
+        # Although there is a deck called Bingo, the actual bingo data is stored elsewhere.
+        if config.rng_trainers_cat_bingo:
+            logging.debug('Randomizing Battle Bingo data...')
+            for i, card in enumerate(self.bingo_cards):
+                card.randomize(self.pokemon_data, self.move_data)
+                logging.debug('  Card #%d: Lv%d %s' % (i, card.level, ', '.join(
+                    ['%s (%s)' % (p.species.name, p.move.name) for p in card.pokemon_data])))
+
         # Write the Shadow Pokémon list into the DOL file.
         # In this address, there is obviously a list of all the Shadow Pokémon available.
         # It's not exactly clear at this point whether it's this list or the Shadow Pokémon deck copy in common.fsys
@@ -892,4 +1014,10 @@ class XDHandler(BaseHandler):
             return 0x003DEBA8
         else:
             raise NotImplementedError
+
+    # in common.fsys/common_rel
+    @property
+    def bingo_data_offset(self):
+        # The same for all regions
+        return 0x00001CAF
 

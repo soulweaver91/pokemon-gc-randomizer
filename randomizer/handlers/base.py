@@ -918,3 +918,10 @@ class BaseHandler:
 
     def update_banner(self):
         pass
+
+
+def get_bst_range_for_level(level, bst_min, bst_max):
+    level_bst_min = min(bst_max - 100, max(bst_min, bst_min + (level - 10) / 65 * (bst_max - bst_min)))
+    level_bst_max = min(bst_max, max(bst_min, bst_min + (level + 30) / 80 * (bst_max - bst_min)))
+
+    return level_bst_min, level_bst_max
