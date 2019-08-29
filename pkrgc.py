@@ -17,7 +17,7 @@ def add_enable_disable_argument(p, name, default=False, help_enable=None, help_d
     if help_enable is not None:
         help_enable += default_passage if default else ''
     if help_disable is not None:
-        help_enable += default_passage if not default else ''
+        help_disable += default_passage if not default else ''
 
     group = p.add_mutually_exclusive_group(required=False)
     group.add_argument('--' + name, dest=dest_name, action='store_true', help=help_enable)
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         type=float,
         metavar='VAR',
         help='Decides the variance for the Gauss distribution according to which the base stat factors are generated. '
-             'Lower values result in more uniform stats, while higher values result in more extreme stats.'
+             'Lower values result in more uniform stats, while higher values result in more extreme stats. '
              '(Default: 0.35)'
     )
     add_enable_disable_argument(
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         type=int,
         metavar='RATIO',
         help='Control the percentage probability of an evolved form gaining a new type. '
-             'Only used if --rng-pktypes-family is also enabled.'
+             'Only used if --rng-pktypes-family is also enabled. '
              '(Default: 33)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         type=int,
         metavar='RATIO',
         help='Control the percentage probability of an evolved form getting its abilities also randomized. '
-             'Only used if --rng-pkabi-family is also enabled.'
+             'Only used if --rng-pkabi-family is also enabled. '
              '(Default: 33)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         parser_pkmn_randomization_group,
         'rng-pkmoves-dmg-progression',
         default=config.rng_pkmoves_dmg_progression,
-        help_enable='Rearrange damaging moves so thaat weaker moves are learned first.',
+        help_enable='Rearrange damaging moves so that weaker moves are learned first.',
         help_disable='Don\'t rearrange damaging moves.'
     )
     add_enable_disable_argument(
@@ -242,7 +242,7 @@ if __name__ == "__main__":
         metavar='RATIO',
         help='Control the probability percentage of a movepool of a randomized learned move containing damaging moves '
              'of a type the Pokémon doesn\'t have. All non-damaging moves will still be available for each move slot, '
-             'as well as Normal-type moves, unless otherwise enforced by --rng-pkmoves-min-own-type-ratio.'
+             'as well as Normal-type moves, unless otherwise enforced by --rng-pkmoves-min-own-type-ratio. '
              '(Default: 25)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -252,7 +252,7 @@ if __name__ == "__main__":
         type=int,
         metavar='RATIO',
         help='Control the probability percentage of a movepool for choosing a randomized learned move only containing '
-             'damaging moves.'
+             'damaging moves. '
              '(Default: 25)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -262,7 +262,7 @@ if __name__ == "__main__":
         type=int,
         metavar='RATIO',
         help='Control the probability percentage of a movepool for choosing a randomized learned move only containing '
-             ' moves with a type of that Pokémon itself.'
+             ' moves with a type of that Pokémon itself. '
              '(Default: 15)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -295,7 +295,7 @@ if __name__ == "__main__":
         type=int,
         metavar='RATIO',
         help='Control the probability percentage of the Pokémon being able to learn TMs that contain damaging moves '
-             'with the same type as the Pokémon itself.'
+             'with the same type as the Pokémon itself. '
              '(Default: 90)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         type=int,
         metavar='RATIO',
         help='Control the probability percentage of the Pokémon being able to learn TMs that contain Normal-type '
-             'damaging moves. This ratio is not used for Normal-type Pokémon themselves.'
+             'damaging moves. This ratio is not used for Normal-type Pokémon themselves. '
              '(Default: 75)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -315,7 +315,7 @@ if __name__ == "__main__":
         type=int,
         metavar='RATIO',
         help='Control the probability percentage of the Pokémon being able to learn TMs that contain damaging moves '
-             'with a different type as the Pokémon itself, excluding Normal-type moves.'
+             'with a different type as the Pokémon itself, excluding Normal-type moves. '
              '(Default: 40)'
     )
     parser_pkmn_randomization_group.add_argument(
@@ -370,7 +370,7 @@ if __name__ == "__main__":
         'rng-tm-moves',
         default=config.rng_tm_moves,
         help_enable='Randomize the moves taught by the 50 Technical Machines.',
-        help_disable='Do not change the PP of moves.'
+        help_disable='Keep the original TM moves.'
     )
     add_enable_disable_argument(
         parser_move_randomization_group,
@@ -400,7 +400,7 @@ if __name__ == "__main__":
         parser_move_randomization_group,
         'rng-move-pp',
         default=config.rng_move_pp,
-        help_enable='Randomize the PP of every move to a value betwen 5 and 40, divisible by 40.',
+        help_enable='Randomize the PP of every move to a value betwen 5 and 40, divisible by 5.',
         help_disable='Do not change the PP of moves.'
     )
 
@@ -518,7 +518,7 @@ if __name__ == "__main__":
         metavar='SPECIES',
         help='Rather than randomizing the starter Pokémon, specify which species the starter(s) should be. '
              'For Colosseum, provide two species, and for XD, provide one. Note the non-standard spellings of the '
-             'following Pokémon that must be used: NIDORAN_F, NIDORAN_M, FARFETCH_D, MR_MIME'
+             'following Pokémon that must be used: NIDORAN_F, NIDORAN_M, FARFETCH_D, MR_MIME, HO_OH'
     )
     parser_gift_pkmn_randomization_group.add_argument(
         '--rng-starters-max-bst',
