@@ -530,6 +530,28 @@ if __name__ == "__main__":
     )
 
     parser_wild_randomization_group = parser.add_argument_group('Poké Spot randomization options (XD)')
+    add_enable_disable_argument(
+        parser_wild_randomization_group,
+        'rng-pokespot',
+        default=config.rng_pokespot,
+        help_enable='Randomizes the species available from Poké Spots.',
+        help_disable='Retain the original Poké Spot species.'
+    )
+    add_enable_disable_argument(
+        parser_wild_randomization_group,
+        'rng-pokespot-improve-levels',
+        default=config.rng_pokespot_improve_levels,
+        help_enable='Raises the range of available Pokémon in Poké Spots.',
+        help_disable='Retain the original Poké Spot levels.'
+    )
+    add_enable_disable_argument(
+        parser_wild_randomization_group,
+        'rng-pokespot-bst-based',
+        default=config.rng_pokespot_bst_based,
+        help_enable='Allow only Pokémon with suitable base stat total (using the same algorithm as '
+                    '--rng-trainers-power-progression) to appear at Poké Spots.',
+        help_disable='Any Pokémon can appear at Poké Spots.'
+    )
 
     parser_patches_group = parser.add_argument_group('Miscellaneous patches')
     # TODO. Name casing change, etc. patches.

@@ -91,6 +91,8 @@ class Randomizer:
         if config.rng_items:
             self.handler.randomize_item_boxes()
 
+        self.handler.randomize_game_specific_features()
+
         if config.rng_starters:
             self.handler.randomize_and_write_starter_data()
 

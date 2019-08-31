@@ -63,6 +63,9 @@ class RandomizerConfig:
             "rng_starters": True,
             "rng_starters_fixed": [],
             "rng_starters_max_bst": 500,
+            "rng_pokespot": True,
+            "rng_pokespot_improve_levels": True,
+            "rng_pokespot_bst_based": True,
             "patch_impossible_evolutions": True
         }
 

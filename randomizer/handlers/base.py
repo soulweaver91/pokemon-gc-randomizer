@@ -785,6 +785,9 @@ class BaseHandler:
                 item_box.item.name
             )
 
+    def randomize_game_specific_features(self):
+        pass
+
     def randomize_and_write_starter_data(self):
         raise AbstractHandlerMethodError()
 

@@ -711,6 +711,9 @@ class XDHandler(BaseHandler):
     ITEM_BOX_LIST_LENGTH = 114
     BINGO_CARD_LIST_LENGTH = 11
 
+    # actually 11, but the last two are Bonsly and Munchlax and overwriting their species causes weird things to happen
+    POKESPOT_COUNT = 9
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.trainer_decks = {}
@@ -926,6 +929,58 @@ class XDHandler(BaseHandler):
         self.dol_file.seek(self.shadow_monitor_data_offset)
         self.dol_file.write(b''.join([pack('>H', i) for i in shadow_pokemon_dex_nos]))
 
+    def randomize_pokespot_data(self):
+        if not config.rng_pokespot and not config.rng_pokespot_improve_levels:
+            return
+
+        logging.debug('Updating Poké Spot data.')
+
+        bsts = [p.base_stats.total for p in self.pokemon_data.values()]
+        bst_min = min(bsts)
+        bst_max = max(bsts)
+
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        common_rel.seek(self.pokespot_data_offset)
+
+        used_species = []
+
+        for i in range(self.POKESPOT_COUNT):
+            if config.rng_pokespot_improve_levels:
+                lower_level = random.randint(25, 35)
+                upper_level = lower_level + random.randint(0, 10)
+                common_rel.write(pack('>BB', lower_level, upper_level))
+            else:
+                [lower_level, upper_level] = unpack('>BB', common_rel.read(2))
+
+            if config.rng_pokespot:
+                if config.rng_pokespot_bst_based:
+                    level_bst_min, level_bst_max = get_bst_range_for_level(lower_level, bst_min, bst_max)
+
+                    candidates = [p for p in self.pokemon_data.values()
+                                  if level_bst_min <= p.base_stats.total <= level_bst_max
+                                  and p.species not in used_species]
+                else:
+                    candidates = [p for p in self.normal_pokemon if p.species not in used_species]
+
+                if len(candidates) == 0:
+                    candidates = self.normal_pokemon
+
+                # Write in order: species, constant zero, encounter rate (set to 33% for two slots and 34% for one slot
+                # for each Spot respectively), another constant zero, and steps to meet that Pokémon.
+                species = random.choice(candidates).species
+                common_rel.write(pack('>HHHHH', species.value, 0, 34 if i % 3 == 0 else 33, 0,
+                                      random.randint(80, 160)))
+            else:
+                species = PokemonSpecies(unpack('>H', common_rel.read(2))[0])
+                common_rel.seek(8, 1)
+
+            logging.debug('  Poké Spot slot #%d now has a wild %s encounter at Lv%d–%d' % (
+                i + 1, species.name, lower_level, upper_level
+            ))
+
+    def randomize_game_specific_features(self):
+        self.randomize_pokespot_data()
+
     def update_banner(self):
         name = 'XDランダマイザー'.encode('shift-jis') if self.region == IsoRegion.JPN else b'XD Randomizer'
 
@@ -1020,4 +1075,11 @@ class XDHandler(BaseHandler):
     def bingo_data_offset(self):
         # The same for all regions
         return 0x00001CAF
+
+    # in common.fsys/common_rel
+    @property
+    def pokespot_data_offset(self):
+        # The same for all regions
+        return 0x00002FAC
+
 
