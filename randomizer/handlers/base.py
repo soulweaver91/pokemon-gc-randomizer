@@ -428,7 +428,7 @@ class BaseItemBox:
                     break
 
         if random_qty:
-            self.quantity = 16 - round(math.pow(random.randint(1, 65536), 1/4))
+            self.quantity = 16 - round(math.pow(random.randint(1, 65536), 1/4) * 15/16)
 
     def encode(self):
         raise AbstractHandlerMethodError()
