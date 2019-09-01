@@ -7,6 +7,10 @@ Original C implementation by Okumura Haruhiko (public domain)
 
 import logging
 
+
+STALE_LIMIT = 4096 - 16 - 2
+
+
 class LZSSBase(object):
     def __init__(self, infile, outfile, EI=12, EJ=4, P=2, N=0, F=0, rless=2, init_chr=b'\x00'):
         self.infile = infile
@@ -25,6 +29,126 @@ class LZSSBase(object):
             self.init_chr = init_chr[0]
 
         self.buffer = bytearray(self.N)
+
+
+class LZSSDictionaryNode:
+    def __init__(self, depth, file_pos):
+        self.subnodes = {}
+        self.value = None
+
+        self.depth = depth
+        self.file_pos = file_pos
+
+    def __getitem__(self, i):
+        return self.subnodes[i]
+
+    def __setitem__(self, i, v):
+        self.subnodes[i] = v
+
+    def __delitem__(self, i):
+        del self.subnodes[i]
+
+    def store(self, s, file_pos):
+        self.update_position(file_pos)
+
+        if len(s) == 0:
+            return
+
+        if s[0] not in self.subnodes.keys():
+            self[s[0]] = LZSSDictionaryNode(self.depth + 1, file_pos)
+
+        self[s[0]].store(s[1:], file_pos)
+
+    def find(self, s, file_pos):
+        if len(s) == 0 or self.file_pos < file_pos - STALE_LIMIT:
+            match_start, match_len = self.file_pos, self.depth
+        elif s[0] not in self.subnodes.keys():
+            match_start, match_len = self.file_pos, self.depth
+        else:
+            match_start, match_len = self[s[0]].find(s[1:], file_pos)
+
+            if match_start < file_pos - STALE_LIMIT:
+                match_start, match_len = self.file_pos, self.depth
+                del self[s[0]]
+
+        return match_start, match_len
+
+    def update_position(self, new_pos):
+        if new_pos > self.file_pos:
+            self.file_pos = new_pos
+
+    def gc(self, file_pos):
+        keys = list(self.subnodes.keys())
+        for key in keys:
+            if self[key].file_pos < file_pos - STALE_LIMIT:
+                del self[key]
+            else:
+                self[key].gc(file_pos)
+
+
+class LZSSDictionary:
+    # This determines how often the QC is run: every nth time the upper buffer is mirrored, i.e. every n * 4 kB.
+    # Nodes also do lazy self-cleanup whenever they would be returning a stale node (see the deletion in their
+    # find function). 16 kB was determined to be the sweet spot when it comes to efficiency; more time is lost
+    # either GCing or maintaining an unnecessarily large dictionary tree with both larger and smaller multipliers.
+    ROUNDS_FOR_GC = 4
+
+    def __init__(self):
+        self.subnodes = {}
+        self.rounds_for_gc = self.ROUNDS_FOR_GC
+
+    def __getitem__(self, i):
+        return self.subnodes[i]
+
+    def __setitem__(self, i, v):
+        self.subnodes[i] = v
+
+    def __delitem__(self, i):
+        del self.subnodes[i]
+
+    def store(self, s, file_pos, start_before):
+        if len(s) == 0:
+            return
+
+        for i in reversed(range(len(s))):
+            ss = s[-(i + 1):][:19]
+            pos = file_pos + (len(s) - i - 1)
+
+            if pos >= start_before:
+                continue
+
+            if ss[0] not in self.subnodes.keys():
+                self[ss[0]] = LZSSDictionaryNode(1, pos)
+
+            self[ss[0]].store(ss[1:], pos)
+
+    def find(self, s, file_pos):
+        if s[0] not in self.subnodes.keys() or len(s) < 2:
+            return 0, 0
+        else:
+            match_start, match_len = self[s[0]].find(s[1:], file_pos)
+
+        return match_start, match_len
+
+    def maybe_gc(self, file_pos):
+        # The garbage collector goes through the entire node tree and prunes all known sequences that were last
+        # encountered so long ago that they are not in the buffer anymore. Notably, if a node is deemed stale, that
+        # entire subtree can be immediately also deemed stale and removed, since it is not possible to encounter i.e.
+        # a sequence starting with "GAM" at a later point than any sequence starting with "GA".
+        # Garbage collecting would strictly not be necessary, but with large files (like common_rel at 707 kB),
+        # the massive node tree will eventually make Python munch upwards of 2 GB of RAM, so it very much makes sense.
+        # Moreover, the code performs better with smaller subnode hashes anyway, making a properly GC'd code run
+        # faster, too.
+        self.rounds_for_gc -= 1
+        if self.rounds_for_gc == 0:
+            keys = list(self.subnodes.keys())
+            for key in keys:
+                if self[key].file_pos < file_pos - STALE_LIMIT:
+                    del self[key]
+                else:
+                    self[key].gc(file_pos)
+
+            self.rounds_for_gc = self.ROUNDS_FOR_GC
 
 
 class LZSSEncoder(LZSSBase):
@@ -74,11 +198,6 @@ class LZSSEncoder(LZSSBase):
         self.data_buffer.extend(self.get_buffer_ref_bytes(x, y))
         self.store_reference_flag()
 
-    # TODO: this is slooooooooooooooooooow.
-    # I had adapted the LZSS encoder from QuickBMS previously, but it didn't seem to work (the ROM crashed on boot), so
-    # I threw the implementation away before the first commit in the repository. Later it was apparent that the problem
-    # was likely the incorrect data alignment and not the encoding process; it would probably be worth it to try that
-    # approach again.
     def encode(self):
         F2 = self.F + self.P
 
@@ -98,45 +217,40 @@ class LZSSEncoder(LZSSBase):
             self.textcount += 1
 
         encode_head = self.N - F2
-        s = 0
+        effective_head = encode_head
+
+        dictionary = LZSSDictionary()
+        dictionary.store(self.buffer[encode_head - F2 - 1:encode_head + F2 + 1], encode_head - F2 - 1, encode_head)
 
         while encode_head < buffer_end:
-            max_match_len = min(F2 + 1, buffer_end - encode_head + 1)
-            match_start = 0
-            match_len = 1
+            max_match_len = min(F2, buffer_end - encode_head)
 
-            c = self.buffer[encode_head]
-            for i in range(encode_head - 1, s - 1, -1):
-                if self.buffer[i] == c:
-                    for j in range(1, max_match_len):
-                        if self.buffer[i + j] != self.buffer[encode_head + j]:
-                            break
-
-                    if j > match_len:
-                        match_start = i
-                        match_len = j
-
-                        if j >= max_match_len:
-                            break
+            match_start, match_len = dictionary.find(self.buffer[encode_head:encode_head + max_match_len],
+                                                     effective_head)
 
             if match_len <= self.P:
                 match_len = 1
-                self.store_literal(c)
+                self.store_literal(self.buffer[encode_head])
             else:
                 self.store_reference(match_start & (self.N - 1), match_len)
 
+            dictionary.store(self.buffer[encode_head:encode_head + match_len + F2 + 1], effective_head,
+                             effective_head + match_len)
+
             encode_head += match_len
-            s += match_len
-            if encode_head >= self.N * 2 - F2:
+            effective_head += match_len
+
+            if encode_head >= self.N * 2 - F2 - 1:
                 logging.debug('  %.2fkB encoded in %.2fkB', self.textcount / 1024, self.outfile.tell() / 1024)
 
+                dictionary.maybe_gc(effective_head)
+
                 # Mirror the upper buffer half to the bottom
-                self.buffer[0:self.N - 1] = self.buffer[self.N:self.N * 2 - 1]
+                self.buffer[0:self.N] = self.buffer[self.N:self.N * 2]
 
                 # Move to the end of the bottom buffer
                 buffer_end -= self.N
                 encode_head -= self.N
-                s -= self.N
 
                 # Read data to the upper buffer
                 while buffer_end < self.N * 2 - self.P:

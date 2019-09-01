@@ -28,10 +28,14 @@ sources regarding creating a supported backup image of your game disc.
 
 ## Troubleshooting
 If a randomized ISO crashes at the Nintendo logo or at the start of a Trainer battle, the randomizer
-has managed to write a file into the ISO in such a manner that the game fails to uncompress it.
-The ISO management routines should be rather stable by now, but this might still happen; please 
-report which ISO you used (stating both the MD5 and the game/region is the best option) and 
-with which options, and it will probably be looked into in due time.
+has managed to write a file into the ISO in such a manner that the game fails to uncompress it. The
+game is pretty strict when it comes to this, and the randomizer occasionally compresses some corner
+cases in a slightly different way that *should* still be interchangeable. If this does happen, please
+file a bug report including at least the following information:
+
+* The ISO type and its MD5 hash
+* The options used for randomization
+* Where and how exactly the ISO hung or crashed
 
 ## Acknowledgements
 
