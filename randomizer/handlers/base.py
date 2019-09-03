@@ -309,31 +309,39 @@ class BasePokemon:
         logging.debug('%s now learns %s', self.species.name,
                       ', '.join(['%s on level %d' % (m.move.name, m.level) for m in self.level_up_moves]))
 
-    def randomize_tms(self, tm_data, previous_stage_tms=None):
-        for i, move in enumerate(tm_data):
+    def randomize_compatibility(self, moves_data, previous_stage_compat, target_property,
+                                status_ratio, own_type_ratio, normal_type_ratio, other_type_ratio):
+        for i, move in enumerate(moves_data):
             if move.power == 0:
                 # Status move
-                ratio = config.rng_pktm_min_status_ratio
+                ratio = status_ratio
             elif move.type == self.type1 or move.type == self.type2:
-                ratio = config.rng_pktm_min_own_type_ratio
+                ratio = own_type_ratio
             elif move.type == Type.NORMAL:
-                ratio = config.rng_pktm_min_normal_type_ratio
+                ratio = normal_type_ratio
             else:
-                ratio = config.rng_pktm_min_other_type_ratio
+                ratio = other_type_ratio
 
-            self.tm_compatibility[i] = random.random() < ratio / 100
+            getattr(self, target_property)[i] = random.random() < ratio / 100
 
-        # Optionally mark previous stage learnable TMs as learnable by this Pokémon too
-        if previous_stage_tms is not None:
-            for i in range(50):
-                self.tm_compatibility[i] = self.tm_compatibility[i] or previous_stage_tms[i]
+        # Optionally mark previous stage learnable moves as learnable by this Pokémon too
+        if previous_stage_compat is not None:
+            for i in range(len(previous_stage_compat)):
+                getattr(self, target_property)[i] = getattr(self, target_property)[i] or previous_stage_compat[i]
+
+        return getattr(self, target_property)
+
+    def randomize_tms(self, tm_data, previous_stage_tms=None):
+        compatibility = self.randomize_compatibility(tm_data, previous_stage_tms, "tm_compatibility",
+                                                     config.rng_pktm_min_status_ratio,
+                                                     config.rng_pktm_min_own_type_ratio,
+                                                     config.rng_pktm_min_normal_type_ratio,
+                                                     config.rng_pktm_min_other_type_ratio)
+        self.update_tm_move_set(tm_data)
 
         logging.debug('%s now learns the following TM moves: %s', self.species.name,
                       ', '.join([tm_data[i].move.name for i, l in enumerate(self.tm_compatibility) if l is True]))
-
-        self.update_tm_move_set(tm_data)
-
-        return self.tm_compatibility
+        return compatibility
 
     def update_tm_move_set(self, tm_data):
         self.tm_moves_set = set([tm_data[i].move for i, l in enumerate(self.tm_compatibility) if l is True])
@@ -435,17 +443,6 @@ class BaseItemBox:
 
 
 class BaseHandler:
-    iso = None
-    region = None
-
-    dol_file = None
-
-    archives = dict()
-    pokemon_data = dict()
-    move_data = dict()
-    item_box_data = dict()
-    tm_data = []
-
     # these should be filled in in the derived handlers
     POKEMON_DATA_LIST_LENGTH = 0
     MOVE_DATA_LIST_LENGTH = 0
@@ -454,6 +451,13 @@ class BaseHandler:
     def __init__(self, iso, region):
         self.iso = iso
         self.region = region
+
+        self.archives = dict()
+        self.pokemon_data = dict()
+        self.move_data = dict()
+        self.item_box_data = dict()
+        self.tm_data = []
+        self.tutor_data = []
 
         # Cacophony is banned because it doesn't have a description and as such crashes the Pokémon status screen and
         # Strategy Memo. It might not work anyways, and its effect is a duplicate one, so it isn't needed in any case.
@@ -784,6 +788,12 @@ class BaseHandler:
                 item_box.quantity,
                 item_box.item.name
             )
+
+    def load_game_specific_data(self):
+        pass
+
+    def write_game_specific_data(self):
+        pass
 
     def randomize_game_specific_features(self):
         pass

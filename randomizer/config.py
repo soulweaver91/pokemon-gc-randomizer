@@ -39,6 +39,13 @@ class RandomizerConfig:
             "rng_pktm_min_normal_type_ratio": 75,
             "rng_pktm_family": True,
             "rng_pktm_full_compat": False,
+            "rng_pktutor": True,
+            "rng_pktutor_min_own_type_ratio": 90,
+            "rng_pktutor_min_other_type_ratio": 40,
+            "rng_pktutor_min_status_ratio": 75,
+            "rng_pktutor_min_normal_type_ratio": 75,
+            "rng_pktutor_family": True,
+            "rng_pktutor_full_compat": False,
             "rng_pkevo": False,
             "rng_pkevo_shuffle": True,
             "rng_pkevo_samestage": True,
@@ -47,6 +54,7 @@ class RandomizerConfig:
             "rng_move_accuracy": False,
             "rng_move_pp": False,
             "rng_tm_moves": True,
+            "rng_tutor_moves": True,
             "rng_trainers": True,
             "rng_trainers_cat_story": True,
             "rng_trainers_cat_mt_battle": True,
@@ -80,7 +88,11 @@ class RandomizerConfig:
             self._config["rng_pktm_min_status_ratio"] = 100
             self._config["rng_pktm_min_normal_type_ratio"] = 100
 
-        pass
+        if self._config["rng_pktutor_full_compat"]:
+            self._config["rng_pktutor_min_own_type_ratio"] = 100
+            self._config["rng_pktutor_min_other_type_ratio"] = 100
+            self._config["rng_pktutor_min_status_ratio"] = 100
+            self._config["rng_pktutor_min_normal_type_ratio"] = 100
 
     def __getattr__(self, name):
         return self._config[name]

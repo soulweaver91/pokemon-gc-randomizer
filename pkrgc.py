@@ -529,6 +529,74 @@ if __name__ == "__main__":
              'high value to allow all Pokémon as starters. (Default: 500)'
     )
 
+    parser_tutor_randomization_group = parser.add_argument_group('Tutor randomization options (XD)')
+    add_enable_disable_argument(
+        parser_move_randomization_group,
+        'rng-tutor-moves',
+        default=config.rng_tm_moves,
+        help_enable='Randomize the moves taught by the Move Tutor in Agate Village.',
+        help_disable='Keep the original tutor moves.'
+    )
+    add_enable_disable_argument(
+        parser_tutor_randomization_group,
+        'rng-pktutor',
+        default=config.rng_pktutor,
+        help_enable='Enable Pokémon tutor learnset randomization.',
+        help_disable='Keep the original Pokémon tutor learnsets. Other --rng-pktutor flags take no effect.'
+    )
+    parser_tutor_randomization_group.add_argument(
+        '--rng-pktutor-min-own-type-ratio',
+        action='store',
+        default=config.rng_pktutor_min_own_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn damaging tutor moves with the same '
+             'type as the Pokémon itself. '
+             '(Default: 90)'
+    )
+    parser_tutor_randomization_group.add_argument(
+        '--rng-pktutor-min-normal-type-ratio',
+        action='store',
+        default=config.rng_pktutor_min_normal_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn damaging Normal-type tutor moves. '
+             'This ratio is not used for Normal-type Pokémon themselves. '
+             '(Default: 75)'
+    )
+    parser_tutor_randomization_group.add_argument(
+        '--rng-pktutor-min-other-type-ratio',
+        action='store',
+        default=config.rng_pktutor_min_other_type_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn damaging tutor moves with a '
+             'different type as the Pokémon itself, excluding Normal-type moves. '
+             '(Default: 40)'
+    )
+    parser_tutor_randomization_group.add_argument(
+        '--rng-pktutor-min-status-ratio',
+        action='store',
+        default=config.rng_pktutor_min_status_ratio,
+        type=int,
+        metavar='RATIO',
+        help='Control the probability percentage of the Pokémon being able to learn non-damaging tutor moves. '
+             '(Default: 75)'
+    )
+    add_enable_disable_argument(
+        parser_tutor_randomization_group,
+        'rng-pktutor-family',
+        default=config.rng_pktutor_family,
+        help_enable='Allow evolved Pokémon to always learn all tutor moves their pre-evolutions can learn.',
+        help_disable='Pre-evolution tutor learnsets are not considered.'
+    )
+    parser_tutor_randomization_group.add_argument(
+        '--rng-pktutor-full-compat',
+        action='store_true',
+        help='All Pokémon learn all tutor moves. This is a shorthand for setting all the other tutor ratio variables '
+             'to 100.'
+    )
+
     parser_wild_randomization_group = parser.add_argument_group('Poké Spot randomization options (XD)')
     add_enable_disable_argument(
         parser_wild_randomization_group,

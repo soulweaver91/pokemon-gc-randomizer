@@ -65,6 +65,8 @@ class Randomizer:
         self.handler.load_trainer_data()
         self.handler.load_item_box_data()
 
+        self.handler.load_game_specific_data()
+
         if config.rng_move_types or config.rng_move_pp or config.rng_move_power or config.rng_move_accuracy:
             self.handler.randomize_moves()
         if config.rng_tm_moves:
@@ -101,5 +103,8 @@ class Randomizer:
         self.handler.write_tm_data()
         self.handler.write_trainer_data()
         self.handler.write_item_box_data()
+
+        self.handler.write_game_specific_data()
+
         self.handler.write_archives()
         self.handler.update_banner()

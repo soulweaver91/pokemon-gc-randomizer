@@ -141,6 +141,17 @@ class XDPokemon(BasePokemon):
             self.encode_level_up_moves(),
             self.unknown_0x115_0x124)
 
+    def randomize_tutors(self, tutor_data, previous_stage_tutors=None):
+        compatibility = self.randomize_compatibility(tutor_data, previous_stage_tutors, "tutor_compatibility",
+                                                     config.rng_pktutor_min_status_ratio,
+                                                     config.rng_pktutor_min_own_type_ratio,
+                                                     config.rng_pktutor_min_normal_type_ratio,
+                                                     config.rng_pktutor_min_other_type_ratio)
+
+        logging.debug('%s now learns the following tutor moves: %s', self.species.name,
+                      ', '.join([tutor_data[i].move.name for i, l in enumerate(self.tutor_compatibility) if l is True]))
+        return compatibility
+
 
 class XDMoveEntry(BaseMoveEntry):
     SIGNATURE = '>bBBBBBBBBBBB4sBBBBB4sB3sB4sH10sH2sH4s'
@@ -710,6 +721,7 @@ class XDHandler(BaseHandler):
     MOVE_DATA_LIST_LENGTH = 373
     ITEM_BOX_LIST_LENGTH = 114
     BINGO_CARD_LIST_LENGTH = 11
+    TUTOR_LIST_LENGTH = 12
 
     # actually 11, but the last two are Bonsly and Munchlax and overwriting their species causes weird things to happen
     POKESPOT_COUNT = 9
@@ -978,8 +990,99 @@ class XDHandler(BaseHandler):
                 i + 1, species.name, lower_level, upper_level
             ))
 
+    def load_tutor_data(self):
+        logging.debug('Reading tutor data.')
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        common_rel.seek(self.tutor_data_common_rel_offset)
+        for i in range(self.TUTOR_LIST_LENGTH):
+            move = self.move_data[unpack(">H", common_rel.read(2))[0]]
+            self.tutor_data.append(move)
+            logging.debug('  Tutor move #%d is %s', i + 1, move.move.name)
+            common_rel.seek(10, 1)
+
+    def write_tutor_data(self):
+        logging.debug('Writing tutor data.')
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        common_rel.seek(self.tutor_data_common_rel_offset)
+        for move in self.tutor_data:
+            common_rel.write(pack(">H", move.move.value))
+            common_rel.seek(10, 1)
+
+        # And we also need to patch the move-to-tutor-learnset-offset lookup table in the executable.
+        self.dol_file.seek(self.tutor_data_start_dol_offset)
+        for i, move in enumerate(self.get_reordered_tutor_data_for_dol_patch()):
+            self.dol_file.seek(2, 1)
+            self.dol_file.write(pack('>H', move.move.value))
+            self.dol_file.seek(4, 1)
+            # Write a noop here. The lookup table has some funky not-greater-or-equal branch optimization magic
+            # going on, and when our new entries can really be in any order, these make us skip over some equality
+            # checks completely. It isn't a problem to lose a few cycles and just go through the list one by one,
+            # though, so we'll do that instead and ignore even trying to rebuild a similar structure.
+            # The fallback branch instruction after the last entry should not be overwritten, though.
+            if i < len(self.tutor_data) - 1:
+                self.dol_file.write(b'\x60\x00\x00\x00')
+
+    def get_reordered_tutor_data_for_randomization(self):
+        # For some reason, the Pokémon tutor learnset flags are in a different order than the tutor data list.
+        return [
+            self.tutor_data[7],   # Body Slam
+            self.tutor_data[10],  # Double-Edge
+            self.tutor_data[2],   # Seismic Toss
+            self.tutor_data[0],   # Mimic
+            self.tutor_data[5],   # Dream Eater
+            self.tutor_data[4],   # Substitute
+            self.tutor_data[1],   # Thunder Wave
+            self.tutor_data[3],   # Icy Wind
+            self.tutor_data[6],   # Swagger
+            self.tutor_data[9],   # Sky Attack
+            self.tutor_data[11],  # Self-Destruct
+            self.tutor_data[8],   # Nightmare
+        ]
+
+    def get_reordered_tutor_data_for_dol_patch(self):
+        # ...and pointers to bit indices to figure out the above are hard-coded in start.dol and are also in a yet
+        # another order. Fun!
+        return [
+            self.tutor_data[5],   # Dream Eater
+            self.tutor_data[1],   # Thunder Wave
+            self.tutor_data[10],  # Double-Edge
+            self.tutor_data[7],   # Body Slam
+            self.tutor_data[2],   # Seismic Toss
+            self.tutor_data[11],  # Self-Destruct
+            self.tutor_data[0],   # Mimic
+            self.tutor_data[8],   # Nightmare
+            self.tutor_data[4],   # Substitute
+            self.tutor_data[9],   # Sky Attack
+            self.tutor_data[6],   # Swagger
+            self.tutor_data[3],   # Icy Wind
+        ]
+
+    def randomize_tutor_moves(self):
+        logging.info('Randomizing tutor moves.')
+        self.tutor_data = random.sample(self.get_available_regular_moves(), self.TUTOR_LIST_LENGTH)
+        for i, move in enumerate(self.tutor_data):
+            logging.debug('  Tutor move #%d is now %s', i + 1, move.move.name)
+
+    def randomize_pokemon_tutor_data(self):
+        logging.info('Randomizing Pokémon tutor learnsets.')
+        self.randomize_pokemon_aspect_recur('tutors', 'previous_stage_tutors',
+                                            self.randomize_pokemon_get_root_level_list(config.rng_pktutor_family),
+                                            recurse=config.rng_pktutor_family,
+                                            tutor_data=self.get_reordered_tutor_data_for_randomization())
+
+    def load_game_specific_data(self):
+        self.load_tutor_data()
+
+    def write_game_specific_data(self):
+        self.write_tutor_data()
+
     def randomize_game_specific_features(self):
         self.randomize_pokespot_data()
+
+        if config.rng_tutor_moves:
+            self.randomize_tutor_moves()
+        if config.rng_pktutor:
+            self.randomize_pokemon_tutor_data()
 
     def update_banner(self):
         name = 'XDランダマイザー'.encode('shift-jis') if self.region == IsoRegion.JPN else b'XD Randomizer'
@@ -1067,6 +1170,30 @@ class XDHandler(BaseHandler):
             return 0x0043BDC8
         elif self.region == IsoRegion.JPN:
             return 0x003DEBA8
+        else:
+            raise NotImplementedError
+
+    # in common.fsys/common_rel
+    @property
+    def tutor_data_common_rel_offset(self):
+        if self.region == IsoRegion.USA:
+            return 0x000A7918
+        elif self.region == IsoRegion.EUR:
+            return 0x000AC794
+        elif self.region == IsoRegion.JPN:
+            return 0x00060C84
+        else:
+            raise NotImplementedError
+
+    # in start.dol
+    @property
+    def tutor_data_start_dol_offset(self):
+        if self.region == IsoRegion.USA:
+            return 0x001C2EA4
+        elif self.region == IsoRegion.EUR:
+            return 0x001C47A0
+        elif self.region == IsoRegion.JPN:
+            return 0x001BE3B4
         else:
             raise NotImplementedError
 
