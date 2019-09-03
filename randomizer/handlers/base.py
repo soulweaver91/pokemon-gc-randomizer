@@ -52,7 +52,7 @@ class BasePokemon:
         self.evolution = []
         self.level_up_moves = []
 
-        self.tm_moves_set = ()
+        self.tm_moves_list = []
 
     def __str__(self):
         return "#%03d %s, %s/%s" % (self.natdex_no, self.species.name, self.type1.name, self.type2.name)
@@ -344,7 +344,7 @@ class BasePokemon:
         return compatibility
 
     def update_tm_move_set(self, tm_data):
-        self.tm_moves_set = set([tm_data[i].move for i, l in enumerate(self.tm_compatibility) if l is True])
+        self.tm_moves_list = [tm_data[i].move for i, l in enumerate(self.tm_compatibility) if l is True]
 
     def patch_evolution(self, index, evo_type, level_or_item):
         self.evolution[index].type = evo_type
@@ -352,7 +352,7 @@ class BasePokemon:
         self.evolution[index].item = Item(level_or_item)
 
     def get_legal_moves_at_level(self, level):
-        return [m.move for m in self.level_up_moves if m.level <= level], self.tm_moves_set
+        return [m.move for m in self.level_up_moves if m.level <= level], self.tm_moves_list
 
     def encode(self):
         raise AbstractHandlerMethodError()

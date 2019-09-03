@@ -68,6 +68,15 @@ if __name__ == "__main__":
         help='Dumps the files extracted from the ISO and the files to be written to the ISO. '
              'This option is only useful to you if you are a developer.'
     )
+    parser_behavior_group.add_argument(
+        '--seed',
+        action='store',
+        type=int,
+        metavar='SEED',
+        help='Set the randomizer seed. Using the same randomizer version with the same ISO, same options and '
+             'the same seed results in identical randomization results. By default, a random seed provided by your '
+             'operating system will be used.'
+    )
 
     parser_pkmn_randomization_group = parser.add_argument_group('Pokémon randomization options')
     add_enable_disable_argument(

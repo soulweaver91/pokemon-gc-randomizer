@@ -7,6 +7,7 @@ class RandomizerConfig:
         self._config = {
             "working_dir": None,
             "dump_files": False,
+            "seed": None,
             "rng_pkstats": False,
             "rng_pkstats_retain_bst": True,
             "rng_pkstats_family": True,

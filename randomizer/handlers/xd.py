@@ -278,10 +278,10 @@ class XDTrainerDeck:
         size = len(encoded_deck) + 16
         return b'DECK' + pack('>III', size, self.unknown_0x08_0x0B, self.unknown_0x0C_0x0F) + encoded_deck
 
-    def randomize(self, pokemon_data, shadow_indexes, shadow_candidates):
+    def randomize(self, pokemon_data, move_data, shadow_indexes, shadow_candidates):
         for section in self.sections:
             if type(section) is XDTrainerDeckDPKM:
-                shadow_candidates = section.randomize(pokemon_data, shadow_indexes, shadow_candidates)
+                shadow_candidates = section.randomize(pokemon_data, move_data, shadow_indexes, shadow_candidates)
             elif type(section) is XDTrainerDeckDDPK:
                 section.randomize()
 
@@ -400,7 +400,7 @@ class XDTrainerDeckDPKM(XDTrainerSection):
 
         return data
 
-    def randomize(self, pokemon_data, shadow_indexes, shadow_candidates):
+    def randomize(self, pokemon_data, move_data, shadow_indexes, shadow_candidates):
         bsts = [p.base_stats.total for p in pokemon_data.values()]
         bst_min = min(bsts)
         bst_max = max(bsts)
@@ -443,14 +443,23 @@ class XDTrainerDeckDPKM(XDTrainerSection):
             if config.rng_trainers_level_up_only:
                 pokemon.moves = level_up_moves[-4:]
             else:
-                if len(level_up_moves) + len(tm_moves) < 4:
-                    pokemon.moves = level_up_moves + list(tm_moves)
+                if len(level_up_moves) + len(tm_moves) <= 4:
+                    pokemon.moves = level_up_moves + tm_moves
                 else:
-                    moves = set()
-                    while len(moves) < 4:
-                        moves = moves.union(set(random.sample(list(tm_moves) + level_up_moves * 4, 4)))
+                    moves = []
+                    pool = tm_moves + level_up_moves * 4
 
-                    pokemon.moves = list(moves)[0:4]
+                    # Pick a damaging move for the pool if only possible
+                    damaging_moves = [m for m in pool if move_data[m.value].power > 0]
+                    if len(damaging_moves) > 0:
+                        moves.append(random.choice(damaging_moves))
+
+                    while len(moves) < 4:
+                        move = random.choice(pool)
+                        if move not in moves:
+                            moves.append(move)
+
+                    pokemon.moves = moves
 
             pokemon.moves = pokemon.moves + [Move.NONE] * max(0, 4 - len(pokemon.moves))
 
@@ -712,8 +721,7 @@ class XDBattleBingoCard:
             pokemon.species = candidate.species
 
             level_up_moves, tm_moves = candidate.get_legal_moves_at_level(self.level)
-            pokemon.move = random.choice([m for m in level_up_moves * 4 + list(tm_moves)
-                                          if move_data[m.value].power > 0])
+            pokemon.move = random.choice([m for m in level_up_moves * 4 + tm_moves if move_data[m.value].power > 0])
 
 
 class XDHandler(BaseHandler):
@@ -895,7 +903,7 @@ class XDHandler(BaseHandler):
         for deck_name, deck in self.trainer_decks.items():
             if decks_to_randomize[deck_name]:
                 logging.debug('Randomizing deck %s.' % deck_name.decode('ascii', errors='replace'))
-                deck.randomize(self.pokemon_data, self.shadow_pokemon_indexes, allowed_shadow_pokemon)
+                deck.randomize(self.pokemon_data, self.move_data, self.shadow_pokemon_indexes, allowed_shadow_pokemon)
 
                 for section in deck.sections:
                     if section.section_type == b'DPKM':

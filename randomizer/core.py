@@ -3,6 +3,7 @@
 
 import logging
 import os
+import random
 
 from contrib.gciso import gciso
 from . import util, config
@@ -35,6 +36,10 @@ class Randomizer:
                 raise NotImplementedError('Colosseum is not supported yet.')
             elif game == IsoGame.XD:
                 self.handler = XDHandler(iso, region)
+
+            seed = config.seed if config.seed else int.from_bytes(os.urandom(8), "big")
+            logging.info('Randomizer seed: %d (%s)' % (seed, 'automatic' if config.seed is None else 'user provided'))
+            random.seed(seed)
 
         except IOError as e:
             logging.error('Reading from the ISO file failed.')
@@ -92,6 +97,8 @@ class Randomizer:
             self.handler.randomize_trainers()
         if config.rng_items:
             self.handler.randomize_item_boxes()
+
+        #print([random.randint(0, 100) for i in range(100)])
 
         self.handler.randomize_game_specific_features()
 
