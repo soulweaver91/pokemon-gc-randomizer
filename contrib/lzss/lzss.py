@@ -111,7 +111,7 @@ class LZSSDictionary:
             return
 
         for i in reversed(range(len(s))):
-            ss = s[-(i + 1):][:19]
+            ss = s[-(i + 1):][:18]
             pos = file_pos + (len(s) - i - 1)
 
             if pos >= start_before:
@@ -234,14 +234,15 @@ class LZSSEncoder(LZSSBase):
             else:
                 self.store_reference(match_start & (self.N - 1), match_len)
 
-            dictionary.store(self.buffer[encode_head:encode_head + match_len + F2 + 1], effective_head,
+            dictionary.store(self.buffer[encode_head:min(encode_head + match_len + F2, buffer_end + 1)], effective_head,
                              effective_head + match_len)
 
             encode_head += match_len
             effective_head += match_len
 
-            if encode_head >= self.N * 2 - F2 - 1:
+            if encode_head >= self.N * 2 - F2:
                 logging.debug('  %.2fkB encoded in %.2fkB', self.textcount / 1024, self.outfile.tell() / 1024)
+                offset_from_boundary = (encode_head - (self.N * 2 - F2))
 
                 dictionary.maybe_gc(effective_head)
 
@@ -262,6 +263,11 @@ class LZSSEncoder(LZSSBase):
 
                     self.textcount += 1
                     self.buffer[buffer_end] = z[0]
+
+                # Add buffer border crossing dictionary entries
+                for i in reversed(range(0, offset_from_boundary)):
+                    dictionary.store(self.buffer[encode_head - F2 - 1 - i:encode_head + F2 + 1 - i],
+                                     effective_head - F2 - 1 - i, effective_head - i)
 
         self.maybe_write_bytes(True)
         logging.debug('  %.2fkB encoded in %.2fkB', self.textcount / 1024, self.outfile.tell() / 1024)

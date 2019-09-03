@@ -237,15 +237,15 @@ class FsysArchive:
         # Build name header
         file_names = [f[0] + b'\x00' for f in encoded_files]
         name_header = b''.join(file_names)
-        if len(name_header) % 8 != 0:
+        if len(name_header) % 16 != 0:
             # alignment
-            name_header += b'\x00' * (8 - (len(name_header) % 8))
+            name_header += b'\x00' * (16 - (len(name_header) % 16))
 
         # Calculate offsets
         header2_offset = 0x40
         file_header_table_offset = 0x60
         file_name_table_offset = file_header_table_offset + len(encoded_files) * 4 \
-            + (4 if len(encoded_files) % 2 != 0 else 0)
+            + (12 - 4 * ((len(encoded_files) - 1) % 4))
         file_header_block_offset = file_name_table_offset + len(name_header)
         file_data_offset = file_header_block_offset + len(encoded_files) * 112 \
             + (file_header_block_offset + len(encoded_files) * 112) % 32
@@ -281,8 +281,7 @@ class FsysArchive:
         # Write file header offset table
         encoded_fsys.write(b''.join([pack('>I', file_header_block_offset + i * 112)
                                      for i in range(0, len(encoded_files))]))
-        if len(encoded_files) % 2 != 0:
-            encoded_fsys.write(b'\x00' * 4)
+        encoded_fsys.write(b'\x00' * (file_name_table_offset - encoded_fsys.tell()))
 
         # Write name table
         encoded_fsys.write(name_header)
