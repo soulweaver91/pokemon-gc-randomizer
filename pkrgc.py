@@ -537,6 +537,29 @@ if __name__ == "__main__":
         help='Limit the base stats total of the starter Pokémon to be smaller or equal to this value. Set to a '
              'high value to allow all Pokémon as starters. (Default: 500)'
     )
+    add_enable_disable_argument(
+        parser_gift_pkmn_randomization_group,
+        'rng-trade-wants',
+        default=config.rng_trade_wants,
+        help_enable='Randomize the Pokémon requested by NPCs who can trade with the player. In XD, Hordel is also '
+                    'normalized to accept the purified form of the same Pokémon he originally gives to you.',
+        help_disable='Keep the requested Pokémon for trades as they are. In XD, Hordel will also always accept '
+                     'a purified Togepi or Togetic, overriding --rng-gifts if set.'
+    )
+    add_enable_disable_argument(
+        parser_gift_pkmn_randomization_group,
+        'rng-trade-offers',
+        default=config.rng_trade_offers,
+        help_enable='Randomize the Pokémon received from the NPC trades.',
+        help_disable='Keep the original Pokémon the NPCs trade to you.'
+    )
+    add_enable_disable_argument(
+        parser_gift_pkmn_randomization_group,
+        'rng-gifts',
+        default=config.rng_gifts,
+        help_enable='Randomize the gift Pokémon the NPCs give to the player.',
+        help_disable='Retain the original gift Pokémon.'
+    )
 
     parser_tutor_randomization_group = parser.add_argument_group('Tutor randomization options (XD)')
     add_enable_disable_argument(

@@ -872,6 +872,108 @@ class XDHandler(BaseHandler):
         self.dol_file.seek(0x44, 1)
         self.dol_file.write(pack(">H", exp_values[eevee.exp_class]))
 
+    def randomize_and_write_trades_and_gifts(self):
+        logging.info('Randomizing gift and trade Pokémon data.')
+
+        # Find what we randomized the Togepi to. We need to put the same species here for coherency.
+        # Also, we want to have Hordel accept that Pokémon (only) for his trade.
+        togepi = None
+        try:
+            story_deck = self.trainer_decks[b'DeckData_Story.bin']
+            for story_deck_section in story_deck.sections:
+                if story_deck_section.section_type == b'DPKM':
+                    togepi = self.pokemon_data[story_deck_section.entries[1].species.value]
+                    break
+        except KeyError:
+            # This shouldn't happen.
+            logging.warning('Shadow Togepi data was not found, the gifted Pokémon might be incoherent.')
+            togepi = random.choice(self.normal_pokemon)
+
+        species = [togepi] + random.sample([p for p in self.normal_pokemon if p != togepi], 7)
+
+        # Depending on the config, the range is either [0], [], [0, 1, 2, 3, 4] or [1, 2, 3, 4]
+        for i in range(0 if config.rng_gifts else 1, 1 if config.rng_trade_offers else 5):
+            self.dol_file.seek(self.trade_and_gift_data_offsets[i])
+            self.dol_file.seek(2, 1)
+            self.dol_file.write(pack('>H', species[i].species.value))
+            self.dol_file.seek(8, 1)
+
+            level = unpack('>H', self.dol_file.read(2))[0]
+            moves = [m.move for m in species[i].level_up_moves if m.level <= level][-4:]
+            while len(moves) < 4:
+                moves.append(Move.NONE)
+
+            self.dol_file.seek(24, 1)
+
+            for j in range(4):
+                self.dol_file.write(pack(">H", moves[j].value))
+                self.dol_file.seek(2, 1)
+
+        # Cancel the randomized results if these were ultimately not written. This is really only necessary
+        # for the upcoming info console output.
+        # If the ROM has been edited beforehand, these are also actually not correct. However, we only support
+        # randomizing a clean ROM, so we can allow that slight chance of inconsistency if the user does randomize
+        # an already altered ROM.
+        if not config.rng_gifts:
+            species[0] = self.pokemon_data[PokemonSpecies.TOGEPI]
+        if not config.rng_trade_offers:
+            species[1:5] = [self.pokemon_data[PokemonSpecies.ELEKID],
+                            self.pokemon_data[PokemonSpecies.TRAPINCH],
+                            self.pokemon_data[PokemonSpecies.SURSKIT],
+                            self.pokemon_data[PokemonSpecies.WOOPER]]
+
+        if config.rng_gifts:
+            for i in range(5, 8):
+                self.dol_file.seek(self.trade_and_gift_data_offsets[i])
+                self.dol_file.seek(2, 1)
+                self.dol_file.write(pack('>H', species[i].species.value))
+                self.dol_file.seek(2, 1)
+
+                moves = [m.move for m in species[i].level_up_moves if m.level <= 5][-4:]
+                while len(moves) < 4:
+                    moves.append(Move.NONE)
+
+                for j in range(4):
+                    self.dol_file.write(pack(">H", moves[j].value))
+                    self.dol_file.seek(2, 1)
+
+        # Then, update what the trainers are asking in the first place.
+        if config.rng_trade_wants:
+            pyrite_scripts = self.archives[b'M2_guild_1F_2.fsys'].get_file(b'M2_guild_1F_2', 1).data
+            pyrite_scripts.seek(self.duking_trade_script_pkmn_offset)
+            trade_wants = random.sample(self.normal_pokemon, 3)
+            for trade_want in trade_wants:
+                pyrite_scripts.write(pack('>H', trade_want.species.value))
+                pyrite_scripts.seek(78, 1)
+            pyrite_scripts.seek(228, 1)
+            for trade_want in trade_wants:
+                pyrite_scripts.write(pack('>H', trade_want.species.value))
+                pyrite_scripts.seek(66, 1)
+        else:
+            # Same caveats about already edited ROMs apply to this too.
+            trade_wants = [self.pokemon_data[PokemonSpecies.MEDITITE],
+                           self.pokemon_data[PokemonSpecies.SHUCKLE],
+                           self.pokemon_data[PokemonSpecies.LARVITAR]]
+
+        if config.rng_gifts:
+            outskirt_scripts = self.archives[b'S1_shop_1F.fsys'].get_file(b'S1_shop_1F', 1).data
+            outskirt_scripts.seek(self.hordel_trade_script_pkmn_offset)
+            outskirt_scripts.write(pack('>H', species[0].species.value))
+            outskirt_scripts.seek(14, 1)
+            outskirt_scripts.write(pack('>H', species[0].species.value))
+            outskirt_scripts.seek(1018, 1)
+            outskirt_scripts.write(pack('>H', species[0].species.value))
+            outskirt_scripts.seek(30, 1)
+            outskirt_scripts.write(pack('>H', species[0].species.value))
+
+        logging.info('  Hordel now hands out a Shadow %s and trades a purified %s for his %s'
+                     % (species[0].species.name, species[0].species.name, species[1].species.name))
+        logging.info('  Duking now trades his %s for your %s, his %s for your %s and his %s for your %s'
+                     % (trade_wants[0].species.name, species[2].species.name, trade_wants[1].species.name,
+                        species[3].species.name, trade_wants[2].species.name, species[4].species.name))
+        logging.info('  Mt. Battle rewards are now %s, %s and %s'
+                     % (species[5].species.name, species[6].species.name, species[7].species.name))
+
     def randomize_trainers(self):
         logging.info('Randomizing trainer data.')
         allowed_shadow_pokemon = [p.species for p in self.normal_pokemon]
@@ -1105,10 +1207,21 @@ class XDHandler(BaseHandler):
 
     @property
     def archive_list(self):
-        return [
+        archives = [
             b'common.fsys',
             b'deck_archive.fsys'
         ]
+
+        if config.rng_trade_wants or config.rng_trade_offers:
+            archives += [
+                b'M2_guild_1F_2.fsys',  # For Duking trades
+            ]
+        if config.rng_trade_wants or config.rng_trade_offers or config.rng_gifts:
+            archives += [
+                b'S1_shop_1F.fsys'      # For Hordel gift/trade
+            ]
+
+        return archives
 
     @property
     def pokemon_data_offset(self):
@@ -1173,6 +1286,58 @@ class XDHandler(BaseHandler):
             ]
         else:
             raise NotImplementedError
+
+    # in start.dol
+    @property
+    def trade_and_gift_data_offsets(self):
+        # Togepi, Elekid, Meditite, Shuckle, Larvitar, Chikorita, Cyndaquil, Totodile
+        if self.region == IsoRegion.USA:
+            return [
+                0x001C5760,
+                0x001C57A4,
+                0x001C5888,
+                0x001C58D8,
+                0x001C5928,
+                0x001C5974,
+                0x001C59A0,
+                0x001C59CC
+            ]
+        elif self.region == IsoRegion.EUR:
+            return [
+                0x001C705C,
+                0x001C70A0,
+                0x001C7184,
+                0x001C71D4,
+                0x001C7224,
+                0x001C7270,
+                0x001C729C,
+                0x001C72C8
+            ]
+        elif self.region == IsoRegion.JPN:
+            return [
+                0x001C0C70,
+                0x001C0CB4,
+                0x001C0D1C,
+                0x001C0D6C,
+                0x001C0DBC,
+                0x001C0E08,
+                0x001C0E34,
+                0x001C0E60
+            ]
+        else:
+            raise NotImplementedError
+
+    # in M2_guild_1F_2.fsys/M2_guild_1F_2 (#2)
+    @property
+    def duking_trade_script_pkmn_offset(self):
+        # The same for all regions
+        return 0x00000B4A
+
+    # in S1_shop_1F.fsys/S1_shop_1F (#2)
+    @property
+    def hordel_trade_script_pkmn_offset(self):
+        # The same for all regions
+        return 0x00000F26
 
     # in start.dol
     @property

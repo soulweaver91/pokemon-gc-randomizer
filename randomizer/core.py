@@ -98,7 +98,8 @@ class Randomizer:
         if config.rng_items:
             self.handler.randomize_item_boxes()
 
-        #print([random.randint(0, 100) for i in range(100)])
+        if config.rng_trade_wants or config.rng_trade_offers or config.rng_gifts:
+            self.handler.randomize_and_write_trades_and_gifts()
 
         self.handler.randomize_game_specific_features()
 
