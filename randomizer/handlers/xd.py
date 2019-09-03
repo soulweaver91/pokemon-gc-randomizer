@@ -1006,7 +1006,12 @@ class XDHandler(BaseHandler):
         common_rel.seek(self.tutor_data_common_rel_offset)
         for move in self.tutor_data:
             common_rel.write(pack(">H", move.move.value))
-            common_rel.seek(10, 1)
+            common_rel.seek(4, 1)
+            if config.patch_early_tutors:
+                common_rel.write(pack(">H", 1))
+            else:
+                common_rel.seek(2, 1)
+            common_rel.seek(4, 1)
 
         # And we also need to patch the move-to-tutor-learnset-offset lookup table in the executable.
         self.dol_file.seek(self.tutor_data_start_dol_offset)

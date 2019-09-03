@@ -74,7 +74,8 @@ class RandomizerConfig:
             "rng_pokespot": True,
             "rng_pokespot_improve_levels": True,
             "rng_pokespot_bst_based": True,
-            "patch_impossible_evolutions": True
+            "patch_impossible_evolutions": True,
+            "patch_early_tutors": True
         }
 
     def configure(self, **kwargs):

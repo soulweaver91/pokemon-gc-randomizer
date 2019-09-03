@@ -596,6 +596,13 @@ if __name__ == "__main__":
         help='All Pokémon learn all tutor moves. This is a shorthand for setting all the other tutor ratio variables '
              'to 100.'
     )
+    add_enable_disable_argument(
+        parser_tutor_randomization_group,
+        'early-tutors',
+        default=config.patch_early_tutors,
+        help_enable='Make all tutor moves available from the start of the game.',
+        help_disable='Let tutor moves stay locked until specific game events.'
+    )
 
     parser_wild_randomization_group = parser.add_argument_group('Poké Spot randomization options (XD)')
     add_enable_disable_argument(
