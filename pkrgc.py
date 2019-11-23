@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os
-
 __author__ = 'Soulweaver'
 
+import os
 import logging
 import argparse
 
@@ -704,7 +703,9 @@ if __name__ == "__main__":
                     'Onix, Porygon, Scyther and Feebas evolve into Steelix, Porygon2, Scizor and Milotic at level 30. '
                     'Seadra evolves into Kingdra at level 42. '
                     'Poliwhirl and Clamperl evolve into Politoed and Gorebyss with a Sun Stone. '
-                    'Slowpoke and Clamperl evolve into Politoed and Huntail with a Moon Stone.',
+                    'Slowpoke and Clamperl evolve into Politoed and Huntail with a Moon Stone. '
+                    'Additionally, in Colosseum, Eevee will also evolve into Espeon and Umbreon with Sun and Moon '
+                    'Stone, respectively.',
         help_disable='Do not change evolution methods. Some evolutions will be unavailable.'
     )
     add_enable_disable_argument(

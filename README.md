@@ -2,7 +2,7 @@
 
 This tool randomizes Pokémon XD: Gale of Darkness ISOs, providing a fresh gameplay
 experience with different trainer battles, Pokémon specifics and item placements
-based on the given settings. Eventually it will randomize Pokémon Colosseum ISOs
+based on the given settings. It also partially randomizes Pokémon Colosseum ISOs
 as well.
 
 ## Image support
@@ -11,20 +11,16 @@ These images have been tested to work correctly with this randomizer:
 
 | Game                        | Game ID / Region | MD5 Checksum                       |
 | --------------------------- | -----------------| ---------------------------------- |
+| Colosseum                   | GC6P01 / EUR     | `2be2607ae4826cbc77efb4ef4ada6385` |
+| Colosseum                   | GC6J01 / JPN     | `ec80218d9079ccae07350e42356748ce` |
+| Colosseum                   | GC6E01 / USA     | `e3f389dc5662b9f941769e370195ec90` |
 | XD: Gale of Darkness        | GXXP01 / EUR     | `f36d14bebf8fea6a046404bff6adb7e6` |
 | XD: Yami no Kaze Dark Lugia | GXXJ01 / JPN     | `e92856cb965f8411e29ccfc818bd6d5b` |
 | XD: Gale of Darkness        | GXXE01 / USA     | `3bc1671806cf763a8712a5d398f62ad3` |
 
-Additionally, the following images exist but are currently not yet supported:
+Trainer, item box, starter and gift Pokémon related randomization is not yet supported for Colosseum.
 
-| Game                        | Game ID / Region | MD5 Checksum                       |
-| --------------------------- | -----------------| ---------------------------------- |
-| Colosseum                   | GC6P01 / EUR     | `2be2607ae4826cbc77efb4ef4ada6385` |
-| Colosseum                   | GC6J01 / JPN     | `ec80218d9079ccae07350e42356748ce` |
-| Colosseum                   | GC6E01 / USA     | `e3f389dc5662b9f941769e370195ec90` |
-
-The support for these versions will be explored later. Please consult other online
-sources regarding creating a supported backup image of your game disc.
+Please consult other online sources regarding creating a supported backup image of your game disc.
 
 ## Troubleshooting
 If a randomized ISO crashes at the Nintendo logo or at the start of a Trainer battle, the randomizer

@@ -1341,8 +1341,8 @@ class ExpClass(Enum):
 class EvolutionType(Enum):
     NONE = 0x00
     HAPPINESS = 0x01
-    UNUSED_2 = 0x02
-    UNUSED_3 = 0x03
+    HAPPINESS_DAY = 0x02
+    HAPPINESS_NIGHT = 0x03
     LEVEL_UP = 0x04
     TRADE_ALWAYS = 0x05
     TRADE_WITH_ITEM = 0x06

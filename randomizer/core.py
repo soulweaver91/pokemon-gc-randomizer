@@ -7,7 +7,7 @@ import random
 
 from contrib.gciso import gciso
 from . import util, config
-from .handlers import XDHandler
+from .handlers import XDHandler, ColosseumHandler
 from .constants import IsoGame, IsoRegion
 
 
@@ -33,7 +33,7 @@ class Randomizer:
             logging.info('Detected game: %s (%s)', game.value, region.value)
 
             if game == IsoGame.COLOSSEUM:
-                raise NotImplementedError('Colosseum is not supported yet.')
+                self.handler = ColosseumHandler(iso, region)
             elif game == IsoGame.XD:
                 self.handler = XDHandler(iso, region)
 

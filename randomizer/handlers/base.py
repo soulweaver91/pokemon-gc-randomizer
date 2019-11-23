@@ -848,7 +848,10 @@ class BaseHandler:
         # High beauty evolution; Orre doesn't have PokéBlocks
         self.pokemon_data[PokemonSpecies.FEEBAS].patch_evolution(0, EvolutionType.LEVEL_UP, 30)
 
-        # TODO: Espeon and Umbreon for Colosseum
+        self.patch_impossible_game_specific_evolutions()
+
+    def patch_impossible_game_specific_evolutions(self):
+        return
 
     def make_pokemon_data(self, io_in, idx) -> BasePokemon:
         raise AbstractHandlerMethodError()
