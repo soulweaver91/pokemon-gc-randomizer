@@ -903,7 +903,10 @@ class BaseHandler:
 
         return [self.pokemon_data[p.value] for p in first_stage_candidates]
 
-    def get_random_starter(self, idx):
+    def get_random_starter(self, idx, disallowed=None):
+        if disallowed is None:
+            disallowed = []
+
         if len(config.rng_starters_fixed) > idx:
             name = config.rng_starters_fixed[idx].upper()
             try:
@@ -911,7 +914,8 @@ class BaseHandler:
             except KeyError:
                 raise ValueError("No such Pokémon: %s" % name)
         else:
-            min_bst = min([p.base_stats.total for p in self.normal_pokemon if p.base_stats.total > 0])
+            min_bst = min([p.base_stats.total for p in self.normal_pokemon if p.base_stats.total > 0
+                           and p not in disallowed])
             max_bst = max(min_bst, config.rng_starters_max_bst)
             return random.choice([p for p in self.normal_pokemon if p.base_stats.total <= max_bst])
 

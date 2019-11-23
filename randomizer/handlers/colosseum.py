@@ -245,8 +245,36 @@ class ColosseumHandler(BaseHandler):
         return [Item.JOY_SCENT_COLO, Item.VIVID_SCENT_COLO, Item.EXCITE_SCENT_COLO]
 
     def randomize_and_write_starter_data(self):
-        # TODO
-        pass
+        exp_values = {
+            ExpClass.ERRATIC: 23437,
+            ExpClass.FAST: 12500,
+            ExpClass.MEDIUM_FAST: 15625,
+            ExpClass.MEDIUM_SLOW: 11735,
+            ExpClass.SLOW: 19531,
+            ExpClass.FLUCTUATING: 12187,
+        }
+
+        used = []
+        for i in range(0, 2):
+            starter = self.get_random_starter(1, used)
+            moves = [m.move for m in starter.level_up_moves if m.level <= 10][-4:]
+            while len(moves) < 4:
+                moves.append(Move.NONE)
+
+            self.dol_file.seek(self.starter_data_offsets[i])
+            self.dol_file.write(pack(">H", starter.species.value))
+            self.dol_file.seek(2, 1)
+            self.dol_file.write(pack(">H", 25))
+            self.dol_file.seek(14, 1)
+            for j in range(4):
+                self.dol_file.write(pack(">H", moves[j].value))
+                self.dol_file.seek(14, 1)
+            self.dol_file.seek(0x3C, 1)
+            self.dol_file.write(pack(">H", exp_values[starter.exp_class]))
+
+            used.append(starter)
+
+        logging.info('Starters are now replaced with %s and %s' % (used[0].species.name, used[1].species.name))
 
     def randomize_and_write_trades_and_gifts(self):
         # TODO
@@ -344,11 +372,20 @@ class ColosseumHandler(BaseHandler):
     @property
     def starter_data_offsets(self):
         if self.region == IsoRegion.USA:
-            raise NotImplementedError
+            return [
+                0x0012DACA,
+                0x0012DBF2
+            ]
         elif self.region == IsoRegion.EUR:
-            raise NotImplementedError
+            return [
+                0x00131CF6,
+                0x00131E1E
+            ]
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return [
+                0x0012B19A,
+                0x0012B2C2
+            ]
         else:
             raise NotImplementedError
 
