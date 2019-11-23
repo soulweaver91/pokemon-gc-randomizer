@@ -372,6 +372,21 @@ if __name__ == "__main__":
         help_disable='Allow evolutions to randomize to any other Pokémon. This may lead into strong Pokémon evolving '
                      'into weak Pokémon and long or circular evolution chains.'
     )
+    add_enable_disable_argument(
+        parser_pkmn_randomization_group,
+        'rng-pkitem',
+        default=config.rng_pkitem,
+        help_enable='Randomize the items the wild Pokémon can be holding.',
+        help_disable='Keep original items.'
+    )
+    parser_pkmn_randomization_group.add_argument(
+        '--rng-pkitem-ratio',
+        action='store',
+        default=config.rng_pkitem_ratio,
+        type=int,
+        metavar='NUM',
+        help='Control the probability of a wild Pokémon holding an item in the first place.  (Default: 33)'
+    )
 
     parser_move_randomization_group = parser.add_argument_group('Move randomization options')
     add_enable_disable_argument(
@@ -479,6 +494,21 @@ if __name__ == "__main__":
         default=config.rng_trainers_level_up_only,
         help_enable='Trainers\' Pokémon only use the last four level-up moves based on the current level.',
         help_disable='Trainers\' Pokémon can have any level-up or TM moves up to the current level.'
+    )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-item',
+        default=config.rng_trainers_item,
+        help_enable='Randomize the items the Pokémon can be holding.',
+        help_disable='Keep original items.'
+    )
+    parser_trainer_randomization_group.add_argument(
+        '--rng-trainers-item-ratio',
+        action='store',
+        default=config.rng_trainers_item_ratio,
+        type=int,
+        metavar='NUM',
+        help='Control the probability of a trainer Pokémon holding an item in the first place. (Default: 33)'
     )
 
     parser_item_randomization_group = parser.add_argument_group('Item randomization options')

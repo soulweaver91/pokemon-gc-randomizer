@@ -463,6 +463,12 @@ class XDTrainerDeckDPKM(XDTrainerSection):
 
             pokemon.moves = pokemon.moves + [Move.NONE] * max(0, 4 - len(pokemon.moves))
 
+            if config.rng_trainers_item:
+                if random.random() < config.rng_trainers_item_ratio / 100:
+                    pokemon.item = random.choice([i for i in Item if Item.NONE.value < i.value <= Item.TM50.value])
+                else:
+                    pokemon.item = Item.NONE
+
         return shadow_candidates
 
     @property
@@ -1011,9 +1017,10 @@ class XDHandler(BaseHandler):
                     if section.section_type == b'DPKM':
                         for i, pokemon in enumerate(section.entries):
                             if pokemon.species != PokemonSpecies.NONE:
-                                logging.debug('    #%d: Lv%d %s with %s' % (
+                                logging.debug('    #%d: Lv%d %s with %s%s' % (
                                     i, pokemon.level, pokemon.species.name,
-                                    '/'.join([m.name for m in pokemon.moves if m != Move.NONE])))
+                                    '/'.join([m.name for m in pokemon.moves if m != Move.NONE]),
+                                    ('' if pokemon.item == Item.NONE else ' holding %s' % pokemon.item.name)))
                             else:
                                 logging.debug('    #%d: Blank entry' % i)
 

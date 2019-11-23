@@ -346,6 +346,15 @@ class BasePokemon:
     def update_tm_move_set(self, tm_data):
         self.tm_moves_list = [tm_data[i].move for i, l in enumerate(self.tm_compatibility) if l is True]
 
+    def randomize_item(self):
+        if random.random() < config.rng_pkitem_ratio / 100:
+            item = random.choice([i for i in Item if Item.NONE.value < i.value <= Item.TM50.value])
+            self.item1 = item
+            self.item2 = item
+        else:
+            self.item1 = Item.NONE
+            self.item2 = Item.NONE
+
     def patch_evolution(self, index, evo_type, level_or_item):
         self.evolution[index].type = evo_type
         self.evolution[index].level = level_or_item.value if type(level_or_item) == Item else level_or_item
@@ -709,6 +718,15 @@ class BaseHandler:
         self.randomize_pokemon_aspect_recur('tms', 'previous_stage_tms',
                                             self.randomize_pokemon_get_root_level_list(config.rng_pktm_family),
                                             recurse=config.rng_pktm_family, tm_data=self.tm_data)
+
+    def randomize_pokemon_items(self):
+        logging.info('Randomizing Pokémon held items.')
+        for pkmn in self.normal_pokemon:
+            pkmn.randomize_item()
+            if pkmn.item1 == Item.NONE:
+                logging.debug('Wild %s is no longer holding any item' % pkmn.species.name)
+            else:
+                logging.debug('Wild %s is now holding %s' % (pkmn.species.name, pkmn.item1.name))
 
     def randomize_pokemon_evolutions_pass(self, evolvers, evolutions):
         def debug_message(pkmn):
