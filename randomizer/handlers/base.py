@@ -822,6 +822,9 @@ class BaseHandler:
     def randomize_and_write_trades_and_gifts(self):
         raise AbstractHandlerMethodError()
 
+    def improve_catch_rates(self):
+        raise AbstractHandlerMethodError()
+
     def patch_impossible_evolutions(self):
         logging.info('Patching impossible evolutions.')
         # Plain trade evolution after evolving once

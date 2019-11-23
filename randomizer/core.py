@@ -100,6 +100,9 @@ class Randomizer:
         if config.rng_items:
             self.handler.randomize_item_boxes()
 
+        if config.rng_improve_catch_rate:
+            self.handler.improve_catch_rates()
+
         if config.rng_trade_wants or config.rng_trade_offers or config.rng_gifts:
             self.handler.randomize_and_write_trades_and_gifts()
 

@@ -707,6 +707,22 @@ if __name__ == "__main__":
                     'Slowpoke and Clamperl evolve into Politoed and Huntail with a Moon Stone.',
         help_disable='Do not change evolution methods. Some evolutions will be unavailable.'
     )
+    add_enable_disable_argument(
+        parser_patches_group,
+        'improve_catch_rate',
+        default=config.rng_improve_catch_rate,
+        help_enable='Improve the catch rates of Pokémon.',
+        help_disable='Keep original catch rates.'
+    )
+    parser_patches_group.add_argument(
+        '--improve_catch_rate-minimum',
+        action='store',
+        default=config.rng_improve_catch_rate_minimum,
+        type=int,
+        metavar='NUM',
+        help='Set the minimum catch rate allowed for a Pokémon, from 1 to 255. Pokémon whose catch rate is higher '
+             'will keep their original catch rates.  (Default: 90)'
+    )
 
     args = parser.parse_args()
     logging.basicConfig(level=getattr(logging, args.loglevel.upper()),

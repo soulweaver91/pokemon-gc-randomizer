@@ -1032,9 +1032,10 @@ class XDHandler(BaseHandler):
                                 species_name = ('???' if story_dpkm is None
                                                 else story_dpkm.entries[pokemon.dpkm_index].species.name)
 
-                                logging.debug('    #%d: Lv%d Shadow %s (story deck #%d) with %s' % (
+                                logging.debug('    #%d: Lv%d Shadow %s (story deck #%d) with %s, catch rate %d' % (
                                     i, pokemon.level, species_name, pokemon.dpkm_index,
-                                    '/'.join([m.name for m in pokemon.move_overrides if m != Move.NONE])))
+                                    '/'.join([m.name for m in pokemon.move_overrides if m != Move.NONE]),
+                                    pokemon.catch_rate))
                             else:
                                 logging.debug('    #%d: Blank entry' % i)
 
@@ -1191,6 +1192,30 @@ class XDHandler(BaseHandler):
                                             self.randomize_pokemon_get_root_level_list(config.rng_pktutor_family),
                                             recurse=config.rng_pktutor_family,
                                             tutor_data=self.get_reordered_tutor_data_for_randomization())
+
+    def improve_catch_rates(self):
+        logging.info('Updating Pokémon catch rates.')
+        for pkmn in self.normal_pokemon:
+            pkmn.catch_rate = max(pkmn.catch_rate, config.rng_improve_catch_rate_minimum)
+            logging.debug('The catch rate of %s is now %d' % (pkmn.species.name, pkmn.catch_rate))
+
+        # These also need to be updated to the shadow Pokémon deck.
+        dark_ddpk = None
+        try:
+            dark_deck = self.trainer_decks[b'DeckData_DarkPokemon.bin']
+            for dark_deck_section in dark_deck.sections:
+                if dark_deck_section.section_type == b'DDPK':
+                    dark_ddpk = dark_deck_section
+                    break
+        except KeyError:
+            logging.warning('Shadow Pokémon data was not found for some reason, catch rates were not altered.')
+            return
+
+        for entry in dark_ddpk.entries:
+            if entry.dpkm_index == 0:
+                continue
+
+            entry.catch_rate = max(entry.catch_rate, config.rng_improve_catch_rate_minimum)
 
     def load_game_specific_data(self):
         self.load_tutor_data()
