@@ -414,11 +414,41 @@ class BaseMoveEntry:
             self.pp = random.randint(1, 8) * 5
 
 
-class BaseItemBox:
-    def __init__(self):
-        self.quantity = None
-        self.type = None
-        self.item = None
+class ItemBox:
+    SIGNATURE = '>BBhHH6sHfff'
+
+    def __init__(self, data, idx):
+        super().__init__()
+
+        (
+            self.type,
+            self.quantity,
+            self.angle,
+            self.room_id,
+            self.flags,
+            self.unknown_0x08_0x0D,
+            item_id,
+            self.coord_x,
+            self.coord_y,
+            self.coord_z
+
+        ) = unpack(self.SIGNATURE, data)
+
+        self.item = Item(item_id)
+
+    def encode(self):
+        return pack(
+            self.SIGNATURE,
+            self.type,
+            self.quantity,
+            self.angle,
+            self.room_id,
+            self.flags,
+            self.unknown_0x08_0x0D,
+            self.item.value,
+            self.coord_x,
+            self.coord_y,
+            self.coord_z)
 
     @property
     def type_text(self):
@@ -446,9 +476,6 @@ class BaseItemBox:
 
         if random_qty:
             self.quantity = 16 - round(math.pow(random.randint(1, 65536), 1/4) * 15/16)
-
-    def encode(self):
-        raise AbstractHandlerMethodError()
 
 
 class BaseHandler:
@@ -859,8 +886,8 @@ class BaseHandler:
     def make_move_data(self, io_in, idx) -> BaseMoveEntry:
         raise AbstractHandlerMethodError()
 
-    def make_item_box_data(self, io_in, idx) -> BaseItemBox:
-        raise AbstractHandlerMethodError()
+    def make_item_box_data(self, io_in, idx):
+        return ItemBox(io_in.read(0x1C), idx)
 
     @property
     def archive_list(self):

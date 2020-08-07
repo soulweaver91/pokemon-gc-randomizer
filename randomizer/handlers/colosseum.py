@@ -218,7 +218,7 @@ class ColosseumMoveEntry(BaseMoveEntry):
 class ColosseumHandler(BaseHandler):
     POKEMON_DATA_LIST_LENGTH = 412
     MOVE_DATA_LIST_LENGTH = 357
-    ITEM_BOX_LIST_LENGTH = 0
+    ITEM_BOX_LIST_LENGTH = 61
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -236,10 +236,6 @@ class ColosseumHandler(BaseHandler):
 
     def make_move_data(self, io_in, idx):
         return ColosseumMoveEntry(io_in.read(0x38), idx)
-
-    def make_item_box_data(self, io_in, idx):
-        # TODO
-        pass
 
     def get_game_specific_randomizable_items(self):
         return [Item.JOY_SCENT_COLO, Item.VIVID_SCENT_COLO, Item.EXCITE_SCENT_COLO]
@@ -299,14 +295,6 @@ class ColosseumHandler(BaseHandler):
     def randomize_game_specific_features(self):
         pass
 
-    def load_item_box_data(self):
-        # TODO: not implemented yet, temp. override
-        pass
-
-    def write_item_box_data(self):
-        # TODO: not implemented yet, temp. override
-        pass
-
     def patch_impossible_game_specific_evolutions(self):
         self.pokemon_data[PokemonSpecies.EEVEE].patch_evolution(3, EvolutionType.STONE_EVOLUTION, Item.SUN_STONE)
         self.pokemon_data[PokemonSpecies.EEVEE].patch_evolution(4, EvolutionType.STONE_EVOLUTION, Item.MOON_STONE)
@@ -361,11 +349,11 @@ class ColosseumHandler(BaseHandler):
     @property
     def item_data_offset(self):
         if self.region == IsoRegion.USA:
-            raise NotImplementedError
+            return 0x0011D814
         elif self.region == IsoRegion.EUR:
-            raise NotImplementedError
+            return 0x001EAB90
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return 0x000A04F0
         else:
             raise NotImplementedError
 

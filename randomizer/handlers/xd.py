@@ -7,7 +7,7 @@ import logging
 
 from randomizer import config
 from randomizer.constants import IsoRegion
-from randomizer.handlers.base import BasePokemon, BaseMoveEntry, BaseItemBox, get_bst_range_for_level
+from randomizer.handlers.base import BasePokemon, BaseMoveEntry, get_bst_range_for_level
 from randomizer.iso.constants import Move, ExpClass, Ability, Type, PokemonSpecies, Item
 from randomizer.util import chunked
 from . import BaseHandler
@@ -596,44 +596,6 @@ class XDTrainerDeckDSTR(XDTrainerSection):
         return 'Trainer string data'
 
 
-class XDItemBox(BaseItemBox):
-
-    SIGNATURE = '>BBhHH6sHfff'
-
-    def __init__(self, data, idx):
-        super().__init__()
-
-        (
-            self.type,
-            self.quantity,
-            self.angle,
-            self.room_id,
-            self.flags,
-            self.unknown_0x08_0x0D,
-            item_id,
-            self.coord_x,
-            self.coord_y,
-            self.coord_z
-
-        ) = unpack(self.SIGNATURE, data)
-
-        self.item = Item(item_id)
-
-    def encode(self):
-        return pack(
-            self.SIGNATURE,
-            self.type,
-            self.quantity,
-            self.angle,
-            self.room_id,
-            self.flags,
-            self.unknown_0x08_0x0D,
-            self.item.value,
-            self.coord_x,
-            self.coord_y,
-            self.coord_z)
-
-
 class XDBattleBingoCard:
     class PokemonData:
         SIGNATURE = '>BBBBHHH'
@@ -846,9 +808,6 @@ class XDHandler(BaseHandler):
 
     def make_move_data(self, io_in, idx):
         return XDMoveEntry(io_in.read(0x38), idx)
-
-    def make_item_box_data(self, io_in, idx):
-        return XDItemBox(io_in.read(0x1C), idx)
 
     def get_game_specific_randomizable_items(self):
         return [Item.JOY_SCENT_XD, Item.VIVID_SCENT_XD, Item.EXCITE_SCENT_XD, Item.SUN_SHARD, Item.MOON_SHARD]
