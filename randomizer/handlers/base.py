@@ -996,3 +996,71 @@ def get_bst_range_for_level(level, bst_min, bst_max):
     level_bst_max = min(bst_max, max(bst_min, bst_min + (level + 30) / 80 * (bst_max - bst_min)))
 
     return level_bst_min, level_bst_max
+
+
+def randomize_pokemon(pokemon, pokemon_data, move_data, bst_min, bst_max, is_shadow, shadow_candidates,
+                      fixed_species=None):
+    if pokemon.species == PokemonSpecies.NONE:
+        return
+
+    level_bst_min = 0
+    level_bst_max = 5000
+    if config.rng_trainers_power_progression:
+        level_bst_min, level_bst_max = get_bst_range_for_level(pokemon.level, bst_min, bst_max)
+
+    if fixed_species:
+        pokemon.species = fixed_species
+    elif is_shadow and config.rng_trainers_unique_shadow:
+        current_bst = 0
+        attempts = 0
+        # Go through the whole list once. If there are no suitable BST Pokémon,
+        # just pick the first one in the queue.
+        while (level_bst_min > current_bst or level_bst_max < current_bst) \
+                and attempts < len(shadow_candidates):
+            attempts += 1
+
+            pokemon.species = shadow_candidates.pop()
+            current_bst = pokemon_data[pokemon.species.value].base_stats.total
+
+            if level_bst_min > current_bst or level_bst_max < current_bst:
+                shadow_candidates.insert(0, pokemon.species)
+    else:
+        available_pokemon = [p.species for p in pokemon_data.values() if 0 < p.natdex_no < 388
+                             and level_bst_min <= p.base_stats.total <= level_bst_max]
+
+        if len(available_pokemon) == 0:
+            # Only happens if the BSTs have a huge gap somewhere. In that case, just pick randomly.
+            available_pokemon = [p.species for p in pokemon_data.values() if 0 < p.natdex_no < 388]
+
+        pokemon.species = random.choice(available_pokemon)
+
+    level_up_moves, tm_moves = pokemon_data[pokemon.species.value].get_legal_moves_at_level(pokemon.level)
+
+    if config.rng_trainers_level_up_only:
+        pokemon.moves = level_up_moves[-4:]
+    else:
+        if len(level_up_moves) + len(tm_moves) <= 4:
+            pokemon.moves = level_up_moves + tm_moves
+        else:
+            moves = []
+            pool = tm_moves + level_up_moves * 4
+
+            # Pick a damaging move for the pool if only possible
+            damaging_moves = [m for m in pool if move_data[m.value].power > 0]
+            if len(damaging_moves) > 0:
+                moves.append(random.choice(damaging_moves))
+
+            while len(moves) < 4:
+                move = random.choice(pool)
+                if move not in moves:
+                    moves.append(move)
+
+            pokemon.moves = moves
+
+    pokemon.moves = pokemon.moves + [Move.NONE] * max(0, 4 - len(pokemon.moves))
+
+    if config.rng_trainers_item:
+        if random.random() < config.rng_trainers_item_ratio / 100:
+            pokemon.item = random.choice([i for i in Item if Item.NONE.value < i.value <= Item.TM50.value])
+        else:
+            pokemon.item = Item.NONE

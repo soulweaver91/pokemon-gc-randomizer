@@ -18,7 +18,7 @@ These images have been tested to work correctly with this randomizer:
 | XD: Yami no Kaze Dark Lugia | GXXJ01 / JPN     | `e92856cb965f8411e29ccfc818bd6d5b` |
 | XD: Gale of Darkness        | GXXE01 / USA     | `3bc1671806cf763a8712a5d398f62ad3` |
 
-Trainer and gift Pokémon related randomization is not yet supported for Colosseum.
+Gift Pokémon related randomization is not yet supported for Colosseum.
 
 Please consult other online sources regarding creating a supported backup image of your game disc.
 
