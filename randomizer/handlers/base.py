@@ -456,6 +456,8 @@ class ItemBox:
             return 'box'
         elif self.type == 0x44:
             return 'sparkle'
+        elif self.type == 0x6C:
+            return 'ring binder'
         else:
             return 'unknown'
 
