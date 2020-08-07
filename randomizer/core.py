@@ -4,6 +4,7 @@
 import logging
 import os
 import random
+import shutil
 
 from contrib.gciso import gciso
 from . import util, config
@@ -14,7 +15,17 @@ from .constants import IsoGame, IsoRegion
 class Randomizer:
     handler = None
 
-    def __init__(self, rom_path):
+    def __init__(self, rom_path, output_path, in_place=False):
+        if not in_place:
+            logging.info('Please wait while a copy of the original ISO is being created.')
+            logging.debug('Copying from %s to %s', rom_path, output_path)
+            try:
+                shutil.copyfile(rom_path, output_path)
+                rom_path = output_path
+            except Exception as e:
+                logging.error('Creating a file copy failed, aborting.')
+                raise e
+
         logging.debug('Trying to load ISO: %s', rom_path)
         try:
             iso = gciso.IsoFile(rom_path)

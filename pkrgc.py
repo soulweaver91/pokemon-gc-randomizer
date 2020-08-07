@@ -44,12 +44,23 @@ if __name__ == "__main__":
         action='help',
         help="Display this help message and exit."
     )
-    # TODO: copy this file elsewhere so that the original stays untouched
     parser_behavior_group.add_argument(
         'iso_path',
         action='store',
         help='A path to the ISO file to be randomized. Required.',
         metavar='isopath'
+    )
+    parser_behavior_group.add_argument(
+        '-o', '--output-path',
+        action='store',
+        help='The path where the randomized ISO file will be written. Required unless --in-place is set, '
+             'in which case its value is ignored.',
+        metavar='PATH'
+    )
+    parser_behavior_group.add_argument(
+        '--in-place',
+        action='store_true',
+        help='Do the randomization in-place. This means the original ISO file will be overwritten!'
     )
     parser_behavior_group.add_argument(
         '-l', '--loglevel',
@@ -726,11 +737,15 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    if args.in_place is not True and args.output_path is None or args.output_path == args.iso_path:
+        print('Error: a unique output path must be specified when not randomizing in-place!')
+        exit(1)
+
     logging.basicConfig(level=getattr(logging, args.loglevel.upper()),
                         format="{asctime} [{levelname}] {message}", style='{')
 
     config.configure(working_dir=os.path.dirname(__file__), **vars(args))
 
-    randomizer = Randomizer(args.iso_path)
+    randomizer = Randomizer(rom_path=args.iso_path, output_path=args.output_path, in_place=args.in_place)
     randomizer.randomize()
 
