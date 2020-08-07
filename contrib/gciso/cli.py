@@ -2,7 +2,7 @@ import argparse
 import enum
 import sys
 
-import gciso
+from contrib import gciso
 
 def _h(n):
     return "0x{:x}".format(n)
