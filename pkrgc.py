@@ -457,14 +457,22 @@ if __name__ == "__main__":
         parser_trainer_randomization_group,
         'rng-trainers-cat-mt-battle',
         default=config.rng_trainers_cat_mt_battle,
-        help_enable='Randomize Mt. Battle related trainers.',
+        help_enable='Randomize Mt. Battle related trainers. '
+                    'The same data is also used in Colosseum for the Battle Now mode.',
         help_disable='Keep original teams for Mt. Battle related trainers.'
+    )
+    add_enable_disable_argument(
+        parser_trainer_randomization_group,
+        'rng-trainers-cat-colo-battle',
+        default=config.rng_trainers_cat_colo_battle,
+        help_enable='Randomize the Pokémon pools in the Colosseum Battle mode. (Colo only)',
+        help_disable='Keep original Pokémon in Colosseum Battle Mode.'
     )
     add_enable_disable_argument(
         parser_trainer_randomization_group,
         'rng-trainers-cat-quick-battle',
         default=config.rng_trainers_cat_quick_battle,
-        help_enable='Randomize the Pokémon pools in the Quick Battle mode.',
+        help_enable='Randomize the Pokémon pools in the Quick Battle mode. (XD only)',
         help_disable='Keep original Pokémon in Quick Battle Mode.'
     )
     add_enable_disable_argument(

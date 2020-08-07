@@ -519,8 +519,20 @@ class ColosseumHandler(BaseHandler):
         bst_max = max(bsts)
 
         shadow_pokemon_dex_nos = dict()
-        for pokemon in self.trainer_pokemon_data:
+        for i, pokemon in enumerate(self.trainer_pokemon_data):
             if pokemon.species == PokemonSpecies.NONE:
+                continue
+
+            # 245..832: Colosseum Battle rosters
+            # 833..839: Seemingly unused Colosseum Battle trainer
+            # 840..895: Colosseum Battle rosters
+            # 896..1595: Mt. Battle Doubles
+            # 1596..2295: Mt. Battle Singles
+            # 3774..3801: Colosseum Battle rosters
+            if 896 <= i <= 2295 and not config.rng_trainers_cat_mt_battle:
+                continue
+
+            if (245 <= i <= 895 or 3774 <= i <= 3801) and not config.rng_trainers_cat_colo_battle:
                 continue
 
             is_shadow = pokemon.shadow_id != 0

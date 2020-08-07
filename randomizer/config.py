@@ -64,6 +64,7 @@ class RandomizerConfig:
             "rng_trainers_cat_bingo": True,
             "rng_trainers_cat_battle_sim": True,
             "rng_trainers_cat_quick_battle": True,
+            "rng_trainers_cat_colo_battle": True,
             "rng_trainers_unique_shadow": True,
             "rng_trainers_power_progression": True,
             "rng_trainers_level_up_only": False,
