@@ -506,8 +506,23 @@ class ColosseumHandler(BaseHandler):
         logging.info('Starters are now replaced with %s and %s' % (used[0].species.name, used[1].species.name))
 
     def randomize_and_write_trades_and_gifts(self):
-        # TODO
-        pass
+        if not config.rng_gifts:
+            # There are no trades in Colosseum, all randomizable static Pokémon are gifts
+            return
+
+        logging.info('Randomizing gift Pokémon data.')
+
+        species = random.sample(self.normal_pokemon, len(self.trade_and_gift_data_offsets))
+
+        for i, offset in enumerate(self.trade_and_gift_data_offsets):
+            self.dol_file.seek(offset)
+            self.dol_file.seek(2, 1)
+            self.dol_file.write(pack('>H', species[i].species.value))
+
+        logging.info('  Agate Celebi is now %s' % species[0].species.name)
+        logging.info('  Agate Pikachu is now %s' % species[1].species.name)
+        logging.info('  Mt. Battle Ho-Oh is now %s' % species[2].species.name)
+        logging.info('  Duking\'s Plusle is now %s' % species[3].species.name)
 
     def randomize_trainers(self):
         logging.debug('Randomizing trainer data.')
@@ -669,12 +684,28 @@ class ColosseumHandler(BaseHandler):
     # in start.dol
     @property
     def trade_and_gift_data_offsets(self):
+        # Celebi, Pikachu, Ho-Oh, Plusle
         if self.region == IsoRegion.USA:
-            raise NotImplementedError
+            return [
+                0x0012D6B4,
+                0x0012D7C4,
+                0x0012D8E4,
+                0x0012D9C8
+            ]
         elif self.region == IsoRegion.EUR:
-            raise NotImplementedError
+            return [
+                0x001318E0,
+                0x001319F0,
+                0x00131B10,
+                0x00131BF4
+            ]
         elif self.region == IsoRegion.JPN:
-            raise NotImplementedError
+            return [
+                0x0012ADD0,
+                0x0012AEBC,
+                0x0012AFB8,
+                0x0012B098
+            ]
         else:
             raise NotImplementedError
 

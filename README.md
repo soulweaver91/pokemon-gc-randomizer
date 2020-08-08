@@ -29,7 +29,6 @@ Please consult other online sources regarding creating a supported backup image 
   their with-Shadow and without-Shadow roster variations match. Not that this should be an important issue.
 - The randomization process is very slow due to the currently not very well optimized implementation of
   the compression algorithm used to recompress the altered data files.
-- Gift Pokémon related randomization is not yet supported for Colosseum.
 
 ## Troubleshooting
 If a randomized ISO crashes at the Nintendo logo or at the start of a Trainer battle, the randomizer
