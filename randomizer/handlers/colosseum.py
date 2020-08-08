@@ -557,6 +557,9 @@ class ColosseumHandler(BaseHandler):
                               is_shadow=is_shadow, bst_min=bst_min, bst_max=bst_max,
                               shadow_candidates=allowed_shadow_pokemon, fixed_species=fixed_species)
 
+            # Randomize ability, except if it is already something else than one of the slots
+            pokemon.ability_slot = random.choice([0, 1]) if pokemon.ability_slot <= 1 else pokemon.ability_slot
+
             # The Pokémon nickname needs to be fixed as well since for some reason all trainer Pokémon have such
             # a pointer in their data.
             pokemon.nickname_id = self.pokemon_data[pokemon.species.value].name_index
