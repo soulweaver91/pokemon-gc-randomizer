@@ -4,6 +4,40 @@ This tool randomizes Pokémon Colosseum and Pokémon XD: Gale of Darkness ISOs, 
 fresh gameplay experience with different trainer battles, Pokémon specifics and item placements
 based on the given settings.
 
+## Usage
+Pokémon GameCube Randomizer requires Python 3. You can install it by downloading an installer from
+[the official website](https://www.python.org/downloads/) or from a package manager for your operating
+system.
+
+The randomizer is currently only available as a command line tool; a graphical user interface might be added
+at a later date. The only required parameters to invoke the randomizer are the path to a clean, unmodified
+input ISO as well as either the target filename or the `--in-place` switch, which will randomize the ISO
+without leaving the original behind. Thus in order to randomize an ISO with the default settings, something
+like this does the job:
+
+```
+python pkrgc.py --output GXXP01_randomized.iso GXXP01.iso
+```
+
+The default settings are designed to strike a good balance between complete randomness and vanilla experience:
+Pokémon rosters, learnsets, abilities and such are altered, while Pokémon evolutions and types, move details
+and such are kept as is. However, the randomization process is highly customizable through a variety of
+extra command line options. You can find out the list of available options by using the `--help` switch:
+
+```
+python pkrgc.py --help
+```
+
+For example, if you are craving for something more like the so-called "über randomizer", you can try something
+akin to:
+
+```
+python pkrgc.py --rng-pktypes --rng-pkstats --rng-move-power --rng-move-types --rng-move-accuracy --rng-move-pp --rng-pkevo --no-rng-pkevo-samestage --no-rng-pkevo-shuffle --no-rng-pokespot-bst-based -o GXXE01_randomized.iso GXXE01.iso
+```
+
+If you are curious about the specifics of the randomization, you might be interested in using the `-l DEBUG`
+switch to see more detailed output while the program is working on your ISO.
+
 ## Image support
 
 This randomizer supports randomizing the following disc images:
@@ -20,15 +54,17 @@ This randomizer supports randomizing the following disc images:
 Please consult other online sources regarding creating a supported backup image of your game disc.
 
 ## Known caveats
-- Many cosmetic changes are yet to be done. This includes details like adjusting TM descriptions,
-  trade related NPC dialogue to refer to the correct Pokémon and such.
-- P★DA Snag List and Shadow Monitor entries are partially baked into the save files when the save
-  file is first created. If you load a save started with a clean ISO or with a different randomized ISO,
-  these lists will not be using the Pokémon you actually have available.
-- It is currently not possible to randomize Colosseum trainers with Shadow Pokémon in such a way that
-  their with-Shadow and without-Shadow roster variations match. Not that this should be an important issue.
 - The randomization process is very slow due to the currently not very well optimized implementation of
   the compression algorithm used to recompress the altered data files.
+- Many cosmetic changes are yet to be done. This includes details like adjusting TM descriptions to reflect
+  the newly assigned moves, trade related NPC dialogue to refer to the correct Pokémon and such.
+- P★DA Snag List and Shadow Monitor entries are partially baked into the save files when the save
+  file is first created. If you load a save started with a clean ISO, these lists will not be using the
+  Pokémon that are actually available to you post-randomization. (The same obviously goes for already
+  modified/randomized ISOs, though note that randomizing them is not formally supported in any case.)
+- It is currently not feasible to randomize Colosseum trainers with Shadow Pokémon in such a way that
+  their with-Shadow and without-Shadow roster variations match, since there is no easy way to find
+  out which rosters should be paired up. This should hardly be an issue, though.
 
 ## Troubleshooting
 If a randomized ISO crashes at the Nintendo logo or at the start of a Trainer battle, the randomizer
