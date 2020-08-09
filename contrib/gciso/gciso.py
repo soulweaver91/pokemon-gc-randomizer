@@ -278,6 +278,8 @@ class IsoFile(object):
                 break
 
             last_free_offset = f[0] + f[1]
+            if (last_free_offset % 4) != 0:
+                last_free_offset = last_free_offset + (4 - last_free_offset % 4)
 
         # Copy data
         old_data = self.readFile(path, 0)
