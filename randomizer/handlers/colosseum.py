@@ -730,9 +730,9 @@ class ColosseumHandler(BaseHandler):
         if self.region == IsoRegion.USA:
             return 0x00092F04
         elif self.region == IsoRegion.EUR:
-            return 0
+            return 0x0015DF20
         elif self.region == IsoRegion.JPN:
-            return 0
+            return 0x00015BE0
         else:
             raise NotImplementedError
 
