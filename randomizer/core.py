@@ -114,6 +114,9 @@ class Randomizer:
         if config.rng_improve_catch_rate:
             self.handler.improve_catch_rates()
 
+        if config.fix_name_casing and self.handler.region in [IsoRegion.USA, IsoRegion.EUR]:
+            self.handler.fix_name_casing()
+
         if config.rng_trade_wants or config.rng_trade_offers or config.rng_gifts:
             self.handler.randomize_and_write_trades_and_gifts()
 

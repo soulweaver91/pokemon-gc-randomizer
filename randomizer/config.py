@@ -86,7 +86,8 @@ class RandomizerConfig:
             "rng_improve_catch_rate": True,
             "rng_improve_catch_rate_minimum": 90,
             "patch_impossible_evolutions": True,
-            "patch_early_tutors": True
+            "patch_early_tutors": True,
+            "fix_name_casing": True
         }
 
     def configure(self, **kwargs):

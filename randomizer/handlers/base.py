@@ -891,6 +891,30 @@ class BaseHandler:
     def make_item_box_data(self, io_in, idx):
         return ItemBox(io_in.read(0x1C), idx)
 
+    def fix_name_casing(self):
+        logging.debug('Fixing name casing.')
+
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        regions = self.fixable_name_offsets
+        for region_start, region_end in regions:
+            common_rel.seek(region_start)
+            should_cap = True
+            while common_rel.tell() < region_end:
+                char = unpack('>H', common_rel.read(2))[0]
+
+                if 0x0040 < char < 0x005C or 0x00BF < char < 0x00D7 or 0x00D7 < char < 0x00E0:
+                    if not should_cap:
+                        common_rel.seek(-2, 1)
+                        common_rel.write(pack('>H', (char | 0x0020)))
+                    should_cap = False
+                else:
+                    # keep using lowercase after an apostrophe (the Farfetch'd case)
+                    # and after already lowercase letters (like in POKéMON which would otherwise become PokéMon)
+                    if char in [0x0027] or 0x0060 < char < 0x007C or 0x00DF < char < 0x00F7 or 0x00F7 < char < 0x0100:
+                        continue
+
+                    should_cap = True
+
     @property
     def archive_list(self):
         raise AbstractHandlerMethodError()
@@ -918,6 +942,11 @@ class BaseHandler:
     # in start.dol
     @property
     def starter_data_offsets(self):
+        raise AbstractHandlerMethodError()
+
+    # in common.fsys/common_rel
+    @property
+    def fixable_name_offsets(self):
         raise AbstractHandlerMethodError()
 
     def get_first_stages(self):

@@ -665,6 +665,72 @@ class ColosseumHandler(BaseHandler):
             raise NotImplementedError
 
     @property
+    def fixable_name_offsets(self):
+        if self.region == IsoRegion.USA:
+            return [
+                (0x0005D7B0, 0x0005D820),  # Stray names of various kinds
+                (0x0005D8EA, 0x00060E06),  # Stats (sans HP and Sp. Def), Pokémon, moves, natures
+                (0x00061BFE, 0x00062B96),  # Items pre-TMs
+                (0x00062D8C, 0x000632A6),  # Items post-TMs, stray Pokémon names
+                (0x000632C7, 0x000635CD),  # Sp. Def, locations
+                (0x000635E0, 0x00063690),  # Stray item names
+                (0x000636C3, 0x000648B3),  # Trainer classes, trainer names 1
+                (0x000648BA, 0x00065FFC),  # Trainer names 2, types, abilities
+            ]
+        elif self.region == IsoRegion.EUR:
+            return [
+                # English
+                (0x0005E368, 0x0005E3D8),  # Stray names of various kinds
+                (0x0005E4A2, 0x000619C0),  # Stats (sans HP and Sp. Def), Pokémon, moves, natures
+                (0x000627B8, 0x00063750),  # Items pre-TMs
+                (0x00063946, 0x00063E60),  # Items post-TMs, stray Pokémon names
+                (0x00063E85, 0x0006412F),  # Sp. Def, locations
+                (0x00064142, 0x000641F2),  # Stray item names
+                (0x00064225, 0x000652EF),  # Trainer classes, trainer names 1
+                (0x000652FA, 0x0006698A),  # Trainer names 2, types, abilities
+                # German
+                (0x0006A8AC, 0x0006A928),  # Stray names of various kinds
+                (0x0006A9F2, 0x0006E0BC),  # Stats (sans HP and Sp. Def), Pokémon, moves, natures
+                (0x0006EF34, 0x0006FE8E),  # Items pre-TMs
+                (0x00070084, 0x0007058A),  # Items post-TMs, stray Pokémon names
+                (0x000705AF, 0x00070885),  # Sp. Def, locations
+                (0x00070898, 0x00070968),  # Stray item names
+                (0x0007099B, 0x00071B69),  # Trainer classes, trainer names 1
+                (0x00071B74, 0x000732AE),  # Trainer names 2, types, abilities
+                # French
+                (0x000771D0, 0x0007722E),  # Stray names of various kinds
+                (0x0007730E, 0x0007AA6A),  # Stats (sans HP and Sp. Def), Pokémon, moves, natures
+                (0x0007B8BE, 0x0007C88A),  # Items pre-TMs
+                (0x0007CA80, 0x0007D0A6),  # Items post-TMs, stray Pokémon names
+                (0x0007D0CB, 0x0007D3BD),  # Sp. Def, locations
+                (0x0007D3D0, 0x0007D4B2),  # Stray item names
+                (0x0007D4E5, 0x0007E67D),  # Trainer classes, trainer names 1
+                (0x0007E688, 0x0007FE88),  # Trainer names 2, types, abilities
+                # Italian
+                (0x00083DAC, 0x00083E22),  # Stray names of various kinds
+                (0x00083EF4, 0x000875B5),  # Stats (sans HP and Sp. Def), Pokémon, moves, natures
+                (0x000883F8, 0x000893CA),  # Items pre-TMs
+                (0x000895C0, 0x00089B40),  # Items post-TMs, stray Pokémon names
+                (0x00089B65, 0x00089E71),  # Sp. Def, locations
+                (0x00089E84, 0x00089F4C),  # Stray item names
+                (0x00089F7F, 0x0008B3D5),  # Trainer classes, trainer names 1
+                (0x0008B3E0, 0x0008CB96),  # Trainer names 2, types, abilities
+                # Spanish
+                (0x00090AB8, 0x00090B2C),  # Stray names of various kinds
+                (0x00090BFC, 0x000942AE),  # Stats (sans HP and Sp. Def), Pokémon, moves, natures
+                (0x0009513C, 0x00096146),  # Items pre-TMs
+                (0x0009633C, 0x0009687A),  # Items post-TMs, stray Pokémon names
+                (0x0009689F, 0x00096B89),  # Sp. Def, locations
+                (0x00096B9C, 0x00096C68),  # Stray item names
+                (0x00096C9B, 0x00097DDB),  # Trainer classes, trainer names 1
+                (0x00097DE6, 0x000995EA),  # Trainer names 2, types, abilities
+            ]
+        elif self.region == IsoRegion.JPN:
+            return []
+        else:
+            raise NotImplementedError
+
+    @property
     def starter_data_offsets(self):
         if self.region == IsoRegion.USA:
             return [

@@ -743,6 +743,14 @@ if __name__ == "__main__":
         help='Set the minimum catch rate allowed for a Pokémon, from 1 to 255. Pokémon whose catch rate is higher '
              'will keep their original catch rates.  (Default: 90)'
     )
+    add_enable_disable_argument(
+        parser_patches_group,
+        'fix_name_casing',
+        default=config.fix_name_casing,
+        help_enable='If the ISO region is either USA or Europe, change the Pokémon, item, etc. names to use '
+                    'natural casing rather than all uppercase.',
+        help_disable='Do not alter name casing.'
+    )
 
     args = parser.parse_args()
     if args.in_place is not True and args.output_path is None or args.output_path == args.iso_path:

@@ -1200,6 +1200,131 @@ class XDHandler(BaseHandler):
             raise NotImplementedError
 
     @property
+    def fixable_name_offsets(self):
+        if self.region == IsoRegion.USA:
+            return [
+                # English
+                (0x00051EDC, 0x00052F9E),  # Items pre-TMs
+                (0x00053194, 0x000532DE),  # Items post-TMs, pre-Battle CDs
+                (0x00055261, 0x00057245),  # Pokémon, types, abilities
+                (0x00058083, 0x0005A2FB),  # Natures, locations, moves, trainer classes, stray items
+                (0x0005A401, 0x0005BCE9),  # Stray items, trainer names
+                (0x0005BE1A, 0x0005BE72),  # Stats
+                (0x0006386C, 0x00063942),  # Items again 1
+                (0x00063989, 0x00064973),  # Items again 2
+                (0x00064B69, 0x00064B79),  # Items again 3
+                (0x00065E36, 0x00065ECA),  # Stray stuff
+                (0x00065F0A, 0x00065F7C),  # Items again 4
+                (0x00066478, 0x0006842C),  # Pokémon, types, abilities again
+                (0x0006926A, 0x0006B196),  # Natures, locations, moves, trainer classes, stray items again
+                (0x0006B2B6, 0x0006B328),  # Stray items, trainer names again
+                (0x0006BA97, 0x0006D6EF),  # Trainer names, trainer classes, stray items, stats again
+                # German
+                (0x000714DC, 0x000715A4),  # Items 1
+                (0x000715EF, 0x00072595),  # Items 2
+                (0x000738D8, 0x00073900),  # Stray stuff
+                (0x00073994, 0x000739E8),  # Items 3
+                (0x00073DCE, 0x00075DAA),  # Pokémon, types, abilities
+                (0x00076C74, 0x00078AA4),  # Natures, locations, moves, trainer classes, stray items
+                (0x000797E2, 0x00079A1C),  # Stray items, trainer names
+                (0x0007A814, 0x0007A81C),  # Stray stuff
+                (0x0007A916, 0x0007A976),  # Stats
+                # French
+                (0x0007E764, 0x0007E840),  # Items 1
+                (0x0007E881, 0x0007F897),  # Items 2
+                (0x00080D0C, 0x00080D2A),  # Stray stuff
+                (0x00080DC6, 0x00080E28),  # Items 3
+                (0x0008120E, 0x0008330E),  # Pokémon, types, abilities
+                (0x000841AC, 0x00085EE0),  # Natures, locations, moves, trainer classes, stray items
+                (0x00086BDA, 0x00086E9C),  # Stray items, trainer names
+                (0x00087D9C, 0x00087DF0),  # Stats
+                # Italian
+                (0x0008BBE8, 0x0008BCB8),  # Items 1
+                (0x0008BCF9, 0x0008CD19),  # Items 2
+                (0x0008E1AA, 0x0008E236),  # Stray stuff
+                (0x0008E276, 0x0008E2D6),  # Items 3
+                (0x0008E6BC, 0x000906BC),  # Pokémon, types, abilities
+                (0x00091558, 0x0009334A),  # Natures, locations, moves, trainer classes, stray items
+                (0x00095050, 0x00095060),  # Stray stuff
+                (0x00093F74, 0x00094254),  # Stray items, trainer names
+                (0x0009515A, 0x000951B8),  # Stats
+                # Spanish
+                (0x00098FA4, 0x00099066),  # Items 1
+                (0x000990BB, 0x0009A10F),  # Items 2
+                (0x0009B4D0, 0x0009B550),  # Stray stuff
+                (0x0009B590, 0x0009B5EE),  # Items 3
+                (0x0009B9D4, 0x0009D9CC),  # Pokémon, types, abilities
+                (0x0009E8A8, 0x000A06A0),  # Natures, locations, moves, trainer classes, stray items
+                (0x000A0814, 0x000A0820),  # Stray stuff
+                (0x000A12CA, 0x000A1584),  # Stray items, trainer names
+                (0x000A2486, 0x000A24E4),  # Stats
+            ]
+        elif self.region == IsoRegion.EUR:
+            return [
+                # English
+                (0x00053E9C, 0x00054F5E),  # Items pre-TMs
+                (0x00055154, 0x0005529E),  # Items post-TMs, pre-Battle CDs
+                (0x00057221, 0x00059205),  # Pokémon, types, abilities
+                (0x0005A043, 0x0005C2BB),  # Natures, locations, moves, trainer classes, stray items
+                (0x0005C3C1, 0x0005DCA9),  # Stray items, trainer names
+                (0x0005DDDA, 0x0005DE32),  # Stats
+                (0x0006582C, 0x00065902),  # Items again 1
+                (0x00065949, 0x00066933),  # Items again 2
+                (0x00066B29, 0x00066B39),  # Items again 3
+                (0x00067DF2, 0x00067E86),  # Stray stuff
+                (0x00067EC6, 0x00067F38),  # Items again 4
+                (0x00068434, 0x0006A3E8),  # Pokémon, types, abilities again
+                (0x0006B052, 0x0006CF7E),  # Natures, locations, moves, trainer classes, stray items again
+                (0x0006D09E, 0x0006D110),  # Stray items, trainer names again
+                (0x0006D887, 0x0006F469),  # Trainer names, trainer classes, stray items
+                (0x0006F65B, 0x0006F6B3),  # Stats again
+                # German
+                (0x000734A0, 0x00073568),  # Items 1
+                (0x000735C7, 0x00074559),  # Items 2
+                (0x0007474F, 0x00074763),  # Stray stuff
+                (0x0007589C, 0x00075924),  # Stray stuff
+                (0x00075964, 0x000759C6),  # Items 3
+                (0x00075E60, 0x00077E3C),  # Pokémon, types, abilities
+                (0x00078B52, 0x0007AC46),  # Natures, locations, moves, trainer classes, stray items
+                (0x0007AD50, 0x0007ADC8),  # Stray items, trainer names
+                (0x0007B62D, 0x0007D179),  # Trainer names and classes
+                (0x0007D34B, 0x0007D3AB),  # Stats
+                # French
+                (0x00081198, 0x00081274),  # Items 1
+                (0x000812B5, 0x000822CB),  # Items 2
+                (0x000824C1, 0x000824D5),  # Stray stuff
+                (0x00083758, 0x0008379E),  # Stray stuff
+                (0x000837D4, 0x00085E54),  # Items 3, Pokémon, types, abilities
+                (0x00086AFC, 0x00088C6A),  # Natures, locations, moves, trainer classes, trainer names, stray items
+                (0x0008951B, 0x0008B227),  # Trainer names and classes
+                (0x0008B43B, 0x0008B495),  # Stats
+                # Italian
+                (0x0008F28C, 0x0008F35C),  # Items 1
+                (0x0008F39B, 0x000903BB),  # Items 2
+                (0x000905B3, 0x000905D1),  # Stray stuff
+                (0x000917E4, 0x00091880),  # Stray stuff
+                (0x000918D4, 0x00091920),  # Items 3
+                (0x00091DCC, 0x00093DCE),  # Pokémon, types, abilities
+                (0x00094A9C, 0x00096B4C),  # Natures, locations, moves, trainer classes, stray items
+                (0x00096C56, 0x00096CB0),  # Stray stuff
+                (0x000974E9, 0x00099383),  # Stray items, trainer names
+                (0x00099573, 0x000995D2),  # Stats
+                # Spanish
+                (0x0009D3C0, 0x0009D498),  # Items 1
+                (0x0009D4D7, 0x0009E52B),  # Items 2
+                (0x0009E721, 0x0009E735),  # Stray stuff
+                (0x0009F8F0, 0x0009F986),  # Stray stuff
+                (0x0009F9C6, 0x000A1EBC),  # Items 3, Pokémon, types, abilities
+                (0x000A2BAA, 0x000A4DEC),  # Natures, locations, moves, trainer classes, trainer names, stray items
+                (0x000A55C5, 0x000A70F5),  # Stray items, trainer names
+                (0x000A7301, 0x000A7361),  # Stats
+            ]
+        elif self.region == IsoRegion.JPN:
+            return []
+        else:
+            raise NotImplementedError
+
+    @property
     def starter_data_offsets(self):
         if self.region == IsoRegion.USA:
             return [
