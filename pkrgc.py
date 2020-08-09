@@ -434,7 +434,7 @@ if __name__ == "__main__":
         parser_move_randomization_group,
         'rng-move-pp',
         default=config.rng_move_pp,
-        help_enable='Randomize the PP of every move to a value betwen 5 and 40, divisible by 5.',
+        help_enable='Randomize the PP of every move to a value between 5 and 40, divisible by 5.',
         help_disable='Do not change the PP of moves.'
     )
 
