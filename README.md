@@ -35,7 +35,7 @@ akin to:
 python pkrgc.py --rng-pktypes --rng-pkstats --rng-move-power --rng-move-types --rng-move-accuracy --rng-move-pp --rng-pkevo --no-rng-pkevo-samestage --no-rng-pkevo-shuffle --no-rng-pokespot-bst-based -o GXXE01_randomized.iso GXXE01.iso
 ```
 
-If you are curious about the specifics of the randomization, you might be interested in using the `-l DEBUG`
+If you are curious about the specifics of the randomization, you might be interested in using the `-l debug`
 switch to see more detailed output while the program is working on your ISO.
 
 ## Image support
