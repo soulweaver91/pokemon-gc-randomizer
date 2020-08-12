@@ -10,8 +10,8 @@ from randomizer import PROG_NAME, PROG_VERSION, config, Randomizer
 
 
 def add_enable_disable_argument(p, name, default=False, help_enable=None, help_disable=None,
-                                default_passage=' (Default)'):
-    dest_name = name.replace('-', '_')
+                                default_passage=' (Default)', dest_name=None, **kwargs):
+    dest_name = dest_name if dest_name else name.replace('-', '_')
 
     if help_enable is not None:
         help_enable += default_passage if default else ''
@@ -19,8 +19,8 @@ def add_enable_disable_argument(p, name, default=False, help_enable=None, help_d
         help_disable += default_passage if not default else ''
 
     group = p.add_mutually_exclusive_group(required=False)
-    group.add_argument('--' + name, dest=dest_name, action='store_true', help=help_enable)
-    group.add_argument('--no-' + name, dest=dest_name, action='store_false', help=help_disable)
+    group.add_argument('--' + name, dest=dest_name, action='store_true', help=help_enable, **kwargs)
+    group.add_argument('--no-' + name, dest=dest_name, action='store_false', help=help_disable, **kwargs)
 
     p.set_defaults(**{dest_name: default})
 
@@ -69,6 +69,7 @@ if __name__ == "__main__":
              'level than the chosen one will be displayed. '
              'Available values: critical, error, warning, info, debug. Default: info.',
         choices=['critical', 'error', 'warning', 'info', 'debug'],
+        type=str.lower,
         default='info',
         metavar='level'
     )
@@ -613,7 +614,7 @@ if __name__ == "__main__":
     add_enable_disable_argument(
         parser_move_randomization_group,
         'rng-tutor-moves',
-        default=config.rng_tm_moves,
+        default=config.rng_tutor_moves,
         help_enable='Randomize the moves taught by the Move Tutor in Agate Village.',
         help_disable='Keep the original tutor moves.'
     )
@@ -679,6 +680,7 @@ if __name__ == "__main__":
     add_enable_disable_argument(
         parser_tutor_randomization_group,
         'early-tutors',
+        dest_name='patch_early_tutors',
         default=config.patch_early_tutors,
         help_enable='Make all tutor moves available from the start of the game.',
         help_disable='Let tutor moves stay locked until specific game events.'
@@ -709,10 +711,10 @@ if __name__ == "__main__":
     )
 
     parser_patches_group = parser.add_argument_group('Miscellaneous patches')
-    # TODO. Name casing change, etc. patches.
     add_enable_disable_argument(
         parser_patches_group,
         'update-evolutions',
+        dest_name='patch_impossible_evolutions',
         default=config.patch_impossible_evolutions,
         help_enable='Alter evolutions that would otherwise require connecting to another game to happen on a specific '
                     'level or with a specific evolution item instead. Note that evolutions are changed before they are '
@@ -729,15 +731,15 @@ if __name__ == "__main__":
     )
     add_enable_disable_argument(
         parser_patches_group,
-        'improve_catch_rate',
-        default=config.rng_improve_catch_rate,
+        'improve-catch-rate',
+        default=config.improve_catch_rate,
         help_enable='Improve the catch rates of Pokémon.',
         help_disable='Keep original catch rates.'
     )
     parser_patches_group.add_argument(
-        '--improve_catch_rate-minimum',
+        '--improve-catch-rate-minimum',
         action='store',
-        default=config.rng_improve_catch_rate_minimum,
+        default=config.improve_catch_rate_minimum,
         type=int,
         metavar='NUM',
         help='Set the minimum catch rate allowed for a Pokémon, from 1 to 255. Pokémon whose catch rate is higher '
@@ -745,7 +747,7 @@ if __name__ == "__main__":
     )
     add_enable_disable_argument(
         parser_patches_group,
-        'fix_name_casing',
+        'fix-name-casing',
         default=config.fix_name_casing,
         help_enable='If the ISO region is either USA or Europe, change the Pokémon, item, etc. names to use '
                     'natural casing rather than all uppercase.',

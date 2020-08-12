@@ -83,8 +83,8 @@ class RandomizerConfig:
             "rng_pokespot": True,
             "rng_pokespot_improve_levels": True,
             "rng_pokespot_bst_based": True,
-            "rng_improve_catch_rate": True,
-            "rng_improve_catch_rate_minimum": 90,
+            "improve_catch_rate": True,
+            "improve_catch_rate_minimum": 90,
             "patch_impossible_evolutions": True,
             "patch_early_tutors": True,
             "fix_name_casing": True

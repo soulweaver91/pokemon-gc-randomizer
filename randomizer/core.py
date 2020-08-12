@@ -111,7 +111,7 @@ class Randomizer:
         if config.rng_items:
             self.handler.randomize_item_boxes()
 
-        if config.rng_improve_catch_rate:
+        if config.improve_catch_rate:
             self.handler.improve_catch_rates()
 
         if config.fix_name_casing and self.handler.region in [IsoRegion.USA, IsoRegion.EUR]:

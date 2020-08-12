@@ -590,7 +590,7 @@ class ColosseumHandler(BaseHandler):
     def improve_catch_rates(self):
         logging.info('Updating Pokémon catch rates.')
         for pkmn in self.normal_pokemon:
-            pkmn.catch_rate = max(pkmn.catch_rate, config.rng_improve_catch_rate_minimum)
+            pkmn.catch_rate = max(pkmn.catch_rate, config.improve_catch_rate_minimum)
             logging.debug('The catch rate of %s is now %d' % (pkmn.species.name, pkmn.catch_rate))
 
     def load_game_specific_data(self):
