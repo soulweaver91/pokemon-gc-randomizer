@@ -401,6 +401,7 @@ class ColosseumHandler(BaseHandler):
         super().__init__(*args, **kwargs)
         self.trainer_pokemon_data = []
         self.trainer_data = []
+        self.shadow_pokemon_dex_nos = dict()
 
     def load_trainer_data(self):
         logging.info('Reading trainer data from the archive file.')
@@ -430,6 +431,12 @@ class ColosseumHandler(BaseHandler):
                         '/'.join(['?' if v == 65535 else str(v) for v in [pokemon.ev_hp, pokemon.ev_atk, pokemon.ev_def,
                                   pokemon.ev_spatk, pokemon.ev_spdef, pokemon.ev_speed]]),
                     )
+
+                # We collect the shadow Pokémon species here because we need them for the catch rate adjustment later
+                # down even if we don't randomize trainers' Pokémon.
+                # (If we do, this data is simply thrown out and replaced.)
+                if pokemon.shadow_id > 0:
+                    self.shadow_pokemon_dex_nos[pokemon.shadow_id] = pokemon.species
 
             logging.debug('Reading trainer data...')
             common_rel.seek(self.trainer_data_offset)
@@ -529,11 +536,12 @@ class ColosseumHandler(BaseHandler):
         allowed_shadow_pokemon = [p.species for p in self.normal_pokemon]
         random.shuffle(allowed_shadow_pokemon)
 
+        self.shadow_pokemon_dex_nos.clear()
+
         bsts = [p.base_stats.total for p in self.pokemon_data.values()]
         bst_min = min(bsts)
         bst_max = max(bsts)
 
-        shadow_pokemon_dex_nos = dict()
         for i, pokemon in enumerate(self.trainer_pokemon_data):
             if pokemon.species == PokemonSpecies.NONE:
                 continue
@@ -552,7 +560,7 @@ class ColosseumHandler(BaseHandler):
 
             is_shadow = pokemon.shadow_id != 0
 
-            fixed_species = shadow_pokemon_dex_nos.get(pokemon.shadow_id, None)
+            fixed_species = self.shadow_pokemon_dex_nos.get(pokemon.shadow_id, None)
             randomize_pokemon(pokemon=pokemon, pokemon_data=self.pokemon_data, move_data=self.move_data,
                               is_shadow=is_shadow, bst_min=bst_min, bst_max=bst_max,
                               shadow_candidates=allowed_shadow_pokemon, fixed_species=fixed_species)
@@ -565,7 +573,7 @@ class ColosseumHandler(BaseHandler):
             pokemon.nickname_id = self.pokemon_data[pokemon.species.value].name_index
 
             if is_shadow:
-                shadow_pokemon_dex_nos[pokemon.shadow_id] = pokemon.species
+                self.shadow_pokemon_dex_nos[pokemon.shadow_id] = pokemon.species
 
         for i, trainer in enumerate(self.trainer_data):
             party = self.trainer_pokemon_data[trainer.party_offset:trainer.party_offset + 6]
@@ -583,8 +591,8 @@ class ColosseumHandler(BaseHandler):
 
         # write the Shadow Pokémon list
         common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
-        for i, species in shadow_pokemon_dex_nos.items():
-            common_rel.seek(self.pda_shadow_data_offset + 0x38 * i)
+        for i, species in self.shadow_pokemon_dex_nos.items():
+            common_rel.seek(self.shadow_data_offset + 0x02 + 0x38 * i)
             common_rel.write(pack('>H', species.value))
 
     def improve_catch_rates(self):
@@ -592,6 +600,14 @@ class ColosseumHandler(BaseHandler):
         for pkmn in self.normal_pokemon:
             pkmn.catch_rate = max(pkmn.catch_rate, config.improve_catch_rate_minimum)
             logging.debug('The catch rate of %s is now %d' % (pkmn.species.name, pkmn.catch_rate))
+
+        # These also need to be updated to the shadow Pokémon index.
+        common_rel = self.archives[b'common.fsys'].get_file(b'common_rel').data
+        for i, species in self.shadow_pokemon_dex_nos.items():
+            common_rel.seek(self.shadow_data_offset + 0x38 * i)
+            [old_rate] = unpack('>B', common_rel.read(1))
+            common_rel.seek(-1, 1)
+            common_rel.write(pack('>B', max(old_rate, self.pokemon_data[species].catch_rate)))
 
     def load_game_specific_data(self):
         pass
@@ -804,12 +820,12 @@ class ColosseumHandler(BaseHandler):
 
     # in common.fsys/common_rel
     @property
-    def pda_shadow_data_offset(self):
+    def shadow_data_offset(self):
         if self.region == IsoRegion.USA:
-            return 0x00145226
+            return 0x00145224
         elif self.region == IsoRegion.EUR:
-            return 0x002125A2
+            return 0x002125A0
         elif self.region == IsoRegion.JPN:
-            return 0x000C7F02
+            return 0x000C7F00
         else:
             raise NotImplementedError
