@@ -18,11 +18,13 @@ class FsysFile:
                       ' ' + fsys_name.decode('ascii', errors='replace') if fsys_name else '')
         self.fname = fname
         self.header = header
-        self.data = BytesIO()
+        self._original_encoded_data = data
+        self._data = BytesIO()
+        self.accessed = False
         self.duplicate_counter = duplicate_counter
 
-        decode(BytesIO(data[16:]), outfile=self.data)
-        length = self.data.tell()
+        decode(BytesIO(data[16:]), outfile=self._data)
+        length = self._data.tell()
 
         if length == self.header.data_size:
             logging.debug('Successfully decoded %d bytes from the compressed stream.', length)
@@ -39,17 +41,22 @@ class FsysFile:
                                          '' if self.duplicate_counter == 0 else '__' + str(self.duplicate_counter)))
             try:
                 with open(dump_path, 'wb') as f:
-                    f.write(self.data.getvalue())
+                    f.write(self._data.getvalue())
             except IOError:
                 logging.warning('Couldn\'t dump the file %s, skipping dumping.', dump_path)
 
     def encode(self):
-        logging.debug('  Compressing %s.', self.fname.decode('ascii', errors='replace'))
-        self.data.seek(0)
-        output = BytesIO()
-        encode(self.data, outfile=output)
+        if not self.accessed:
+            logging.debug('  %s was not accessed, returning the original compressed data.',
+                          self.fname.decode('ascii', errors='replace'))
+            return self.header, self._original_encoded_data
 
-        self.header.data_size = self.data.tell()
+        logging.debug('  Compressing %s.', self.fname.decode('ascii', errors='replace'))
+        self._data.seek(0)
+        output = BytesIO()
+        encode(self._data, outfile=output)
+
+        self.header.data_size = self._data.tell()
         self.header.data_size_compressed = len(output.getvalue()) + 16
 
         return self.header, (
@@ -62,6 +69,21 @@ class FsysFile:
                 ) +
                 output.getvalue()
         )
+
+    def _invalidate_original_data(self):
+        if not self.accessed:
+            self.accessed = True
+            del self._original_encoded_data
+
+    @property
+    def data(self):
+        self._invalidate_original_data()
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._invalidate_original_data()
+        self._data = value
 
 
 class FsysHeader1:
